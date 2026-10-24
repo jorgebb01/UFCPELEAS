@@ -1,0 +1,24 @@
+table,column,type,description
+fights,fight_id,numeric,Fight identifier used by both tables in this dataset.
+fights,date,string,Calendar date of the game.
+fights,event_name,string,Event name.
+fights,weight_class,string,Weight class.
+fights,fighter_1,string,First fighter as listed for the bout.
+fights,fighter_2,string,Second fighter.
+fights,result,string,"fighter_1, fighter_2, draw or no_contest."
+fights,winner,string,Name of the winner. Empty for draws and no contests.
+fights,method,string,"Method of victory as published, for example KO/TKO, Submission or one of the decision types."
+fights,ending_round,numeric,Round in which the fight ended.
+fights,ending_clock,string,Time on the round clock when the fight ended.
+fights,has_odds,string,True when the fight has rows in odds.
+fights,bookmakers,numeric,Number of bookmakers with at least one price for the fight.
+odds,fight_id,numeric,Fight identifier used by both tables in this dataset.
+odds,bookmaker,string,Bookmaker or odds provider name as published.
+odds,market,string,"Betting market: moneyline (winner including overtime), 1x2 (three-way result in regulation), spread (handicap) or total (over/under points)."
+odds,line,numeric,Handicap or total line. For spread it is the home team's line (negative when the home side gives points); for total it is the points total; empty for moneyline.
+odds,selection_1,string,First selection label exactly as published (for moneyline this is fighter_1).
+odds,odds_1,numeric,Decimal price for selection_1.
+odds,american_1,numeric,"Price for selection_1 in American format, as originally published."
+odds,selection_2,string,Second selection label as published. Empty for props listed with a single selection.
+odds,odds_2,numeric,Decimal price for selection_2.
+odds,american_2,numeric,"Price for selection_2 in American format, as originally published."

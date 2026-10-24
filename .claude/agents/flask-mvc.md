@@ -33,7 +33,7 @@ Entregables:
 
 Linaje: `raw/` → `manual/` → `interim/` → `final/` (o `output/`) → informe, y de regreso.
 
-- **`raw/`:** los datasets de Kaggle, **intactos y de solo lectura**. El código nunca escribe aquí. Cada archivo se registra con su **hash SHA-256** en `registro_fuentes.csv` (archivo, URL de Kaggle, fecha de descarga, responsable, hash, filas). El dataset actual `UFC_full_data_silver_v2.csv` (9.221 líneas) está en la raíz: debe ir a `raw/` sin modificarse.
+- **`raw/`:** los datasets de Kaggle, **intactos y de solo lectura**. El código nunca escribe aquí. Cada archivo se registra con su **hash SHA-256** en `registro_fuentes.csv` (archivo, URL de Kaggle, fecha de descarga, responsable, hash, filas). El dataset actual está en `raw/UFC_full_data_silver_v2.csv` (8.950 filas de datos en 9.221 líneas físicas; contar registros CSV, no líneas), registrado como F-01 con SHA-256 `7bdfb1b9feea9bfba1c5eb210028764562673205dbae218118b91a7c73313f67`.
 - **`manual/`:** datos añadidos a mano (p. ej. las peleas de 2025-2026 que faltan en Kaggle, como la derrota ante Gaethje). Cada fila lleva **URL de la fuente, fecha de consulta y responsable**.
 - **`interim/`:** una salida por transformación (`t01.csv`, `t02.csv`, …). Nunca se sobrescribe una entrada.
 - **`final/`:** el dataset analítico y los resultados del modelo.

@@ -1,0 +1,115 @@
+# Registro de decisiones
+
+Cada decisión de criterio del caso CD-726-017 queda registrada con su identificador, fecha, decisión y justificación. Las decisiones marcadas como PENDIENTE requieren verificación antes de usarse en cifras del informe.
+
+## D-01 — Fecha de la pelea Topuria–Gaethje
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Decisión:** se adopta **2026-06-14** como fecha de la pelea Topuria–Gaethje (UFC Freedom 250).
+- **Justificación:** es el valor de `event_date` que publica ufcstats.com y que recoge el dataset F-01 (`raw/UFC_full_data_silver_v2.csv`). Otras fuentes indican el 15 de junio por la diferencia horaria. Regla general: la fecha oficial de un evento es la de `event_date` de ufcstats (hora local del evento).
+
+## D-02 — Identificación de peleadores
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Decisión:** los peleadores se identifican por su URL de ufcstats (`f_1_url`, `f_2_url`), no por su nombre.
+- **Justificación:** el nombre no es una clave única: existe Aleksandre Topuria (hermano de Ilia) y al menos un nombre del dataset corresponde a dos peleadores distintos. La URL de ufcstats es estable y única por peleador.
+
+## D-03 — Exclusión de las estadísticas `f_*_fighter_*` como predictores
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Decisión:** las columnas `f_*_fighter_*` no se usarán como predictores; las estadísticas de carrera se recalcularán a la fecha de cada pelea, usando solo peleas anteriores.
+- **Justificación:** esas columnas son una instantánea actual del perfil del peleador (snapshot) e incluyen información posterior a cada pelea. Usarlas introduciría fuga temporal (*data leakage*) y sobreestimaría la capacidad predictiva del modelo.
+
+## D-04 — Peleas sin ganador: empates y sin resultado
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01. Verificación de las 3 peleas sin tarjetas completada el 2026-10-24 (F-08).
+- **Decisión:** las 157 peleas de F-01 con `winner` vacío se clasifican según `result`:
+  - **Empate (63):** `result` empieza por "Decision" (39 Majority, 17 Split, 7 Unanimous).
+  - **Sin resultado (94):** `Overturned` (59), `Could Not Continue` (33) y `Other` (2). No cuentan como victoria ni derrota.
+  - **Uso en el modelo:** empates y sin resultado se excluyen de la variable objetivo (gana/pierde), pero se conservan en el historial de cada peleador (récord, actividad, peleas previas).
+- **Justificación:** se revisaron las tarjetas de `result_details` de las 63 decisiones: 60 son empates según las tarjetas (p. ej. dos jueces 28-28 en un empate mayoritario). F-04 (archangel0x01) clasifica como `draw` las 32 de ellas posteriores a 2018, lo que confirma el criterio con una fuente independiente. Las otras 94 no tienen ganador porque el resultado se anuló o la pelea no pudo terminar, que equivale a sin resultado (NC).
+- **Verificación de las 3 decisiones sin tarjetas en F-01:** Brad Gumm vs CJ Fernandes (UFC 27, 2000-09-22, `c078544a32e18ba3`), Tim Lajcik vs Ron Waterman (UFC 22, 1999-09-24, `96c247ba0eb1ac65`) y Jens Pulver vs Alfonso Alcarez (UFC 22, 1999-09-24, `a1c1e3c1e9c6cf1e`). Las tres son **empates** según ufcstats (página de la pelea y fichas de ambos peleadores, vía Wayback Machine, D-13), Wikipedia (revisión fija) y Sherdog: 15 de 15 registros coinciden (M-0157 a M-0171, F-08). En Pulver vs Alcarez se anunció primero una victoria de Pulver que después se cambió a empate; vale el resultado oficial final de ufcstats. Las discrepancias menores entre fuentes (categoría de peso en Gumm vs Fernandes, árbitro en Pulver vs Alcarez) no afectan a `winner`; se toma ufcstats como referencia. Las tarjetas de estas 3 peleas no están publicadas en ninguna de las fuentes consultadas.
+- **Regla:** un `winner` vacío con `result` de decisión es **empate** cuando las tarjetas de `result_details` dan empate o cuando hay verificación manual en F-08.
+
+## D-05 — Procedencia de F-01 y fecha de descarga
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01: `fecha_consulta` de F-01 = **2026-10-22**.
+- **Decisión:** F-01 procede de Kaggle `scarekrow/ufc-data`, **versión 21** (https://www.kaggle.com/datasets/scarekrow/ufc-data/versions/21, publicada el 2026-10-19 00:51 UTC con la nota "Update 2026-10-18: UFC Fight Night: Buckley vs. Malott (13 new fights, 8,950 total)"). Como `fecha_consulta` se propone la fecha real de descarga, que solo puede confirmar el responsable. Debe estar entre el 2026-10-19 y el 2026-10-24, porque la versión 22 (8.964 peleas) se publicó el 2026-10-24 a las 22:56 UTC. El archivo de `raw/` tiene fecha de modificación 2026-10-22 02:44 UTC, que es un indicio pero no una prueba. La URL debe citar la versión 21, no la página genérica, porque la versión actual ya es distinta.
+- **Justificación:** se descargó la versión 21 en un directorio temporal y el SHA-256 del CSV coincide exactamente con el de F-01 (7bdfb1b9…3f67), igual que el tamaño (11.314.591 bytes). La licencia es "Other (specified in description)" y la descripción no detalla condiciones de uso, así que conviene revisarla antes de redistribuir.
+
+## D-06 — Rankings de F-01 tratados como instantánea, no como ranking en la fecha de la pelea
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01. No se incorpora por ahora un histórico de rankings: la cuota de cierre ya refleja el nivel de cada peleador en la fecha de la pelea. Se reconsiderará solo si el modelo necesita el ranking como variable.
+- **Decisión:** `f_1_ranking` y `f_2_ranking` no se usarán como ranking histórico ni como predictor, por el mismo motivo que D-03. Si se necesita el ranking en una fecha concreta, se tomará de una fuente histórica, que habrá que registrar.
+- **Justificación:** la descripción del dataset en Kaggle dice: "Current UFC rankings are a snapshot as of scrape time only, not historical rankings at the time of each fight". En F-01 el valor es constante en todas las peleas de cada peleador: Gaethje 0, Topuria 1 y Pimblett 6, desde 2017 hasta 2026. Como candidata para el ranking histórico queda `jerzyszocik/ufc-rankings-history` (Kaggle, CC0, actualizado el 2026-10-22), que no se ha descargado ni evaluado.
+
+## D-07 — Fuente, casa y momento de la cuota
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01, con el punto (b) concretado tras la ingesta de D-12.
+- **Decisión:** (a) la cuota de referencia para el modelo es la **de cierre**, la última antes de la pelea, porque es la que incorpora más información. La de apertura se conserva solo como descriptiva. (b) Orden de fuentes: 1) F-05 (archangel0x01, cierre por casa); 2) F-07 (jerzyszocik), última instantánea por casa antes de la fecha de la pelea, cuando F-05 no tenga la pelea (p. ej. UFC 298); 3) `manual/cuotas.csv` (F-02) para lo que no cubran ninguno de los dos. Siempre se excluyen los mercados de D-11, y la probabilidad de la pelea es la media entre casas de la probabilidad sin margen (D-08). (c) Cuando solo existe el "Closing range" agregado de BestFightOdds, que muestra dos extremos sin casa identificada, la probabilidad de cada extremo se calcula por separado y se usa el promedio. (d) Las filas `previa_no_cierre` (Covers, UFC 282) se usan solo si no hay ninguna otra cuota de esa pelea, marcadas como aproximación.
+- **Justificación:** BFO no identifica la casa en su ficha de peleador y da un rango, no un único valor de cierre. Hay que elegir un criterio explícito en lugar de tomar un extremo en silencio.
+- **Datasets de Kaggle evaluados (F-04/F-05 y F-07 incorporados por D-12; valihameed descartado):** `archangel0x01/ufc-fight-results-and-betting-props` (MIT, cierre por casa en formato americano y decimal, 2021–2026, coincide con BFO en UFC Freedom 250); `jerzyszocik/ufc-betting-odds-daily-dataset` (CC0, instantáneas diarias por casa con `fight_url` de ufcstats para unos 75.000 de 216.452 registros); `valihameed/ufc-stats` (MIT, cierre `RedOdds`/`BlueOdds`, pero vacío para Mitchell, Oliveira y Gaethje 2026).
+
+## D-08 — Conversión de cuotas americanas a decimales y a probabilidad implícita
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01.
+- **Decisión:** `valor_decimal` = 1 + A/100 si A > 0, y 1 + 100/|A| si A < 0, redondeado a 4 decimales. Las comas de miles del original ("+1,200") se eliminan antes de convertir. Probabilidad implícita bruta = 1/decimal. Para eliminar el margen de la casa en un mercado de dos resultados, cada probabilidad se divide entre la suma de ambas (normalización proporcional).
+- **Justificación:** son conversiones estándar. `valor_original` conserva siempre el texto de la fuente, sin las flechas de movimiento ▲▼ de BFO.
+
+## D-09 — Discrepancia sobre la cuota de Topuria vs Gaethje ("6 a 1" del caso frente al cierre)
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01.
+- **Hechos:** el caso dice "favorito 6 a 1" y calcula la probabilidad como 6/7 ≈ 0,857, lo que equivale a Topuria -600 o decimal 1,167. En BestFightOdds, la apertura es Topuria -500 / Gaethje +385 (M-0043, M-0046). El cierre por casa en la página del evento está entre -450 y -500 para Topuria y entre +350 y +360 para Gaethje (M-0123 a M-0134), lo que da una probabilidad bruta de Topuria de entre 0,82 y 0,83. Además, la ficha de peleador de BFO muestra un "Closing range" de -500 a -250 para Topuria y de +210 a +360 para Gaethje (M-0044, M-0045, M-0047, M-0048). Los extremos -250 y +210 no corresponden a ninguna columna visible de la página del evento.
+- **Decisión:** (a) el "6 a 1" se cita como dato del caso, sin fuente primaria localizada. Parece corresponder a líneas intermedias de mayo de 2026, no al cierre; F-07 (jerzyszocik, incorporado por D-12) lo confirma: entre abril y mayo de 2026 varias casas daban Topuria 1,12–1,13 y Gaethje 5,25–6,5 en decimal (p. ej. Nordic Bet el 2026-05-02: 1,12 / 6,5), y en junio las líneas se acercaron (Topuria 1,17–1,20). (b) Para esta pelea, el modelo usa el cierre por casa de la página del evento (excluyendo los mercados de predicción, D-11) y no el rango de la ficha de peleador.
+
+## D-10 — Atribución errónea en BestFightOdds de UFC 298
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01.
+- **Decisión:** las cuotas de UFC 298 (Volkanovski vs. Topuria, 2024-02-17) que BFO publica bajo el perfil "Alexsandre Topuria" (`/fighters/alexsandre-topuria-15779`) se asignan a Ilia Topuria mediante `fight_url` y `fighter_url` de ufcstats (D-02) (M-0049 a M-0054).
+- **Justificación:** UFC 298 tuvo como estelar a Volkanovski vs. Ilia Topuria, la pelea figura en F-01 con el `fighter_url` de Ilia y no aparece en la ficha BFO de Ilia (`ilia-topuria-8322`). Unir por nombre habría perdido la pelea o la habría asignado a otro peleador.
+- **Recomendación (2026-10-24):** aprobar. F-07 (jerzyszocik) confirma la atribución de forma independiente de BFO: tiene la pelea con `fight_url` `bec3154a11df3299` y `fighter_url` de Ilia Topuria (`54f64b5e283b0ce7`), igual que F-01, con Volkanovski 1,70 / Topuria 2,20. Esos valores caen dentro del rango de cierre de BFO (Topuria -105…+128, Volkanovski -152…-120). F-05 no tiene cuotas de esta pelea (`has_odds` = False). Por D-07, la cuota de referencia de UFC 298 será la de F-07, y M-0049 a M-0054 quedan como verificación cruzada.
+
+## D-11 — Exclusión de mercados de predicción e intercambio como cuota de cierre
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01, ampliada a los datasets de Kaggle.
+- **Decisión:** no se usan como cuota de cierre los mercados de predicción ni de intercambio entre apostadores:
+  - BFO (`manual/cuotas.csv`): las columnas Kalshi y Polymarket se registran (M-0121, M-0122, M-0128, M-0129), pero no se usan.
+  - F-05 (`raw/archangel0x01_v3/odds.csv`): se filtran las filas con `bookmaker` = `Kalshi` o `Polymarket`.
+  - F-07 (`raw/jerzyszocik_v273/UFC_betting_odds.csv`): se filtran las filas con `source` = `Betfair` (intercambio); se conserva `Betfair Sportsbook`.
+- **Justificación:** no son casas de apuestas, y su último precio puede reflejar negociación durante la pelea o después. En UFC Freedom 250, Kalshi muestra a Topuria +228 y a Gaethje -277, es decir, invertido respecto al resto del mercado, lo que es coherente con un precio tomado durante el combate que Gaethje ganó.
+
+## D-12 — Incorporación de datasets de cuotas de Kaggle
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01.
+- **Decisión:** se incorporan a `raw/` dos datasets de cuotas, citados por versión fija: `archangel0x01/ufc-fight-results-and-betting-props` **v3** (F-04, F-05, F-06; MIT) y `jerzyszocik/ufc-betting-odds-daily-dataset` **v273** (F-07; CC0). Se guardan solo los CSV; los `.parquet` del archivo de archangel0x01 se descartan porque duplican el contenido. Se descarta `valihameed/ufc-stats` porque no tiene cuotas de Mitchell, Oliveira ni Gaethje 2026.
+- **Justificación:** F-01 tiene las columnas de cuotas vacías. archangel0x01 aporta la cuota de cierre por casa, incluida Topuria vs Gaethje (coincide con la página del evento en BestFightOdds, F-02). jerzyszocik aporta `fight_url` de ufcstats para unir con F-01 sin depender de nombres (D-02) y las líneas futuras de la revancha. Ambos datasets se actualizan a menudo, por eso se cita la versión y no la página genérica. Las cuotas manuales de F-02 quedan como verificación cruzada y para los casos que no cubren estos datasets (p. ej. UFC 282).
+
+## D-13 — Copias de Wayback Machine cuando ufcstats.com no se puede leer
+
+- **Fecha:** 2026-10-24
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-24 por jorgebb01, con las dos condiciones de la recomendación.
+- **Decisión:** cuando ufcstats.com no se puede leer en directo, se aceptan como fuente de nivel 1 las copias de Wayback Machine de sus páginas, descargadas sin modificar (sufijo `id_`). En `url` se registra la URL de la copia y en `notas`, la URL canónica de ufcstats.
+- **Justificación:** el 2026-10-24 ufcstats.com devolvía un desafío JavaScript anti-bot por HTTP y rechazaba la conexión por HTTPS (evidencia en `manual/capturas/ufcstats_live_challenge_fight_c078544a32e18ba3.html`). No se intentó saltar ese control. Las copias de Wayback tienen fecha fija y no cambian, lo que facilita que el auditor las reproduzca.
+- **Recomendación (2026-10-24):** aprobar, con dos condiciones: (1) preferir siempre la copia de Wayback más reciente anterior a la fecha de consulta y guardar su captura en `manual/capturas/` con hash; (2) si una cifra del informe depende de una página de ufcstats que solo se ha leído en Wayback, contrastarla con F-01 (que procede del mismo ufcstats) o con una segunda fuente (Sherdog, Wikipedia con revisión fija). Wayback es la única forma reproducible de citar ufcstats mientras esté bloqueado, y la URL de la copia no cambia, a diferencia de la página en directo.
