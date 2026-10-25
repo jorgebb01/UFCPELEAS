@@ -40,7 +40,23 @@ def _pipeline() -> int:
         print(f"  {a}")
     print("Cobertura de cuotas de cierre:")
     print(r.cobertura.to_string(index=False))
+    print("Modelo (test 2025-2026):")
+    print(r.modelo["t26"][["modelo", "C", "log_loss", "brier", "accuracy", "ece", "dif_log_loss_vs_mercado", "dif_ic95_inf", "dif_ic95_sup", "elegido"]].to_string(index=False))
+    print("Escenarios:")
+    print(r.modelo["t29"][["escenario", "modelo", "p_topuria", "ic_inf", "ic_sup", "elegido"]].to_string(index=False))
+    print(f"Cifras: {len(r.cifras)} en final/cifras.csv; linaje en final/linaje.csv")
     print(f"Bitácora: {rutas.relativa(rutas.BITACORA)}; diccionario: {rutas.relativa(rutas.DICCIONARIO)}")
+    return 0
+
+
+def _linaje(nodo: str) -> int:
+    """Lista las cifras que cambian si la transformación o fuente `nodo` tiene un error."""
+    from ufcpeleas.models.cifras import cifras_afectadas
+
+    afectadas = cifras_afectadas(nodo)
+    print(f"{len(afectadas)} cifras dependen de {nodo}:")
+    for c in afectadas.itertuples():
+        print(f"  {c.id_cifra} [{c.transformacion}] {c.descripcion} = {c.valor}")
     return 0
 
 
@@ -48,11 +64,15 @@ def main(argv: list[str] | None = None) -> int:
     """Analiza los argumentos y ejecuta la orden pedida."""
     parser = argparse.ArgumentParser(prog="ufcpeleas", description="Caso CD-726-017: pipeline trazable de datos UFC.")
     sub = parser.add_subparsers(dest="orden", required=True)
-    sub.add_parser("pipeline", help="Verifica las fuentes y regenera interim/, final/, bitacora.csv (T-07+) y diccionario.csv")
+    sub.add_parser("pipeline", help="Verifica las fuentes y regenera interim/, final/ (datos, modelo, escenarios, cifras y linaje), bitacora.csv (T-07+) y diccionario.csv")
     sub.add_parser("verificar", help="Solo el paso 0: verifica SHA-256, bytes y registros de registro_fuentes.csv")
+    p_lin = sub.add_parser("linaje", help="Cifras de final/cifras.csv que dependen de una transformación (T-07) o fuente (F-05)")
+    p_lin.add_argument("nodo", help="ID de transformación o fuente, p. ej. T-07")
     args = parser.parse_args(argv)
     if args.orden == "pipeline":
         return _pipeline()
+    if args.orden == "linaje":
+        return _linaje(args.nodo)
     return _verificar()
 
 

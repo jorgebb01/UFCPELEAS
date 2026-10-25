@@ -201,3 +201,51 @@ Cada decisión de criterio del caso CD-726-017 queda registrada con su identific
 - **Estado:** APROBADA el 2026-10-25 por jorgebb01.
 - **Decisión:** En las filas T-07 en adelante de `bitacora.csv`, que escribe el pipeline, la columna `fecha` es la fecha de la última ejecución del pipeline, no la fecha en que se diseñó la transformación. Las filas T-00 a T-06 son manuales y conservan su fecha.
 - **Justificación:** El pipeline regenera esas filas en cada ejecución (idempotencia); la fecha de ejecución indica cuándo se produjeron las salidas que hay en disco, que es lo que el auditor comprueba con `final/manifiesto_salidas.csv`.
+
+## D-25 — Atributos físicos con valores distintos para un mismo peleador
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** cuando F-01 da más de un valor de fecha de nacimiento, altura o alcance para el mismo peleador (identificado por su URL de ufcstats, D-02), se usa un único valor por peleador: el de la fila de su pelea más reciente en F-01. Los peleadores afectados y los valores descartados se registran en la bitácora de la transformación que aplica la regla.
+- **Justificación:** son atributos estáticos (D-23) y deberían ser únicos por peleador; la fila más reciente es la última actualización de ufcstats recogida en F-01. Casos detectados: 3 peleadores con fecha de nacimiento distinta, 3 con altura y 7 con alcance (p. ej. Wang Cong, Jose Delgado, Eric Nolan). Ninguno es Topuria, Gaethje ni Pimblett.
+
+## D-26 — Datos ausentes en el modelo
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** En el modelo, las diferencias peleador − rival que no se pueden calcular valen 0, y la ausencia se recoge en 4 indicadores antisimétricos: `d_debut`, `d_sin_edad`, `d_sin_alcance` y `d_sin_estadisticas`. No se imputa ningún valor en el dataset analítico.
+- **Justificación:** Un 0 en una diferencia antisimétrica no favorece a ninguno de los dos peleadores, y los indicadores permiten al modelo distinguir "sin dato" de "igualdad". Mantener el dataset sin imputar conserva la trazabilidad de cada valor hasta F-01.
+
+## D-27 — Periodos de entrenamiento y regla de elección del modelo
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Ajuste con peleas de 2021 a 2023, validación con 2024 para elegir la regularización C en una rejilla, y test con peleas del 2025-01-01 al 2026-10-17 (una fila por pelea). Gana el modelo con menor log-loss en test, pero un modelo propio solo sustituye al mercado si el IC95 de su diferencia de log-loss con el mercado queda entero por debajo de 0.
+- **Justificación:** Validación temporal sin barajar, para no usar información futura (D-18 condición 2). La regla exige que un modelo propio mejore al mercado de forma estadísticamente clara antes de preferirlo. Resultado: se elige el mercado (C-043).
+
+## D-28 — Fecha supuesta de la próxima pelea y fecha de corte del mercado
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Los escenarios se calculan para una pelea el **2027-02-15** (supuesto) y solo usan información de mercado capturada hasta el **2026-10-25**.
+- **Justificación:** El caso indica que el regreso se prevé para febrero de 2027 sin fecha confirmada. La fecha afecta a la edad y a los días de inactividad de los escenarios. El corte del mercado fija qué líneas se usan para que el resultado sea reproducible.
+
+## D-29 — Intervalos de incertidumbre
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Los intervalos de los modelos B y C en los escenarios se calculan con 300 réplicas bootstrap por peleas (semilla 726018); los intervalos de las métricas, con 1.000 réplicas pareadas (semilla 726017). El intervalo del mercado es el mínimo y el máximo de las líneas disponibles, y es de un solo punto cuando solo hay una línea.
+- **Justificación:** El bootstrap por peleas recoge la incertidumbre del ajuste sin supuestos de distribución; las semillas fijas hacen los resultados reproducibles.
+
+## D-30 — Identificación por nombres de las líneas futuras
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Las líneas futuras de F-07 no tienen URL de ufcstats, así que se identifican por los dos nombres normalizados, como excepción a D-02. Solo se usan las capturadas entre el 2026-06-14 y el corte de D-28. Para Topuria–Pimblett solo se usa la línea de F-02 (M-0115 a M-0120), marcada como anterior a la derrota ante Gaethje.
+- **Justificación:** Una pelea futura todavía no tiene página en ufcstats. El riesgo de confusión es bajo porque se exigen los dos nombres a la vez (Ilia Topuria con su rival, no Aleksandre Topuria). Limitación: la probabilidad de mercado del escenario Pimblett procede de una línea anterior a la derrota y probablemente está inflada.

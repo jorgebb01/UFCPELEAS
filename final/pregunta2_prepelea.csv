@@ -1,0 +1,9 @@
+indicador,valor,n,detalle
+p_topuria_A_mercado,0.7886534604453015,1,"cuota de cierre sin margen, F-05 (5 casas)"
+p_topuria_B_historial,0.8001009765309092,2686,entrenado con peleas de 2021-01-01 a 2026-06-06 (antes de la pelea)
+p_topuria_C_combinado,0.8227178040093417,2686,entrenado con peleas de 2021-01-01 a 2026-06-06 (antes de la pelea)
+tasa_derrota_favoritos_075_085,0.1507760532150776,451,"peleas desde 2021-01-01 con favorito de mercado entre 0,75 y 0,85; p media del favorito 0.7927"
+topuria_victorias_menos_esperadas,2.408988491096995,10,"victorias 9, esperadas 6.5910"
+topuria_dias_inactivo_antes_gaethje,351.0,1,hist_dias_desde_ultima (T-10)
+residuo_medio_inactividad_300_o_mas,0.0006688064998239626,1002,"victoria - p mercado; IC95 bootstrap [-0.0283, 0.0295] (exploratorio)"
+residuo_medio_inactividad_menos_300,0.0018024821542440626,4175,"victoria - p mercado; IC95 bootstrap [-0.0125, 0.0156] (exploratorio)"

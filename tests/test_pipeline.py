@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -83,7 +84,7 @@ def test_bitacora_recuento_de_filas(resultado):
     filas = leer_bitacora()
     ids = [f["id"] for f in filas]
     n_pipeline = len(resultado.contexto.bitacora.entradas)
-    assert n_pipeline == 15
+    assert n_pipeline == 28  # T-07..T-34
     assert len(filas) == len(IDS_MANUALES) + n_pipeline
     assert ids[: len(IDS_MANUALES)] == IDS_MANUALES
     assert ids[len(IDS_MANUALES):] == [f"T-{i:02d}" for i in range(7, 7 + n_pipeline)]
@@ -95,7 +96,8 @@ def test_bitacora_filas_despues_coinciden_con_salidas(resultado):
         if fila["id"] in IDS_MANUALES:
             continue
         assert fila["responsable"] and fila["fecha"] and fila["justificacion"]
-        assert "D-" in fila["justificacion"], fila["id"]
+        # Cada transformación cita su decisión, una regla de auditoría o la pregunta del caso que atiende.
+        assert any(k in fila["justificacion"] for k in ("D-", "Regla de auditoría", "Pregunta")), fila["id"]
         assert int(fila["filas_despues"]) == contar_registros(rutas.RAIZ / fila["salida"]), fila["id"]
 
 
@@ -301,7 +303,17 @@ def test_d23_edad_sin_fuga_y_sin_imputacion(final):
     assert sorted(excluidas) == sorted(f"f_{i}_fighter_{a}" for i in (1, 2) for a in ("dob", "height_cm", "reach_cm"))
 
 
-def test_sin_marcadores_provisionales():
+def test_marcadores_provisionales_solo_para_propuestas_nuevas():
+    """Las decisiones D-01..D-30 están aprobadas: ningún PROVISIONAL puede referirse a ellas."""
+    aprobada = re.compile(r"propuesta D-(0\d|[12]\d|30)\b")
+    nueva = re.compile(r"D-(3[1-9]|[4-9]\d)\b")
     for ruta in (rutas.RAIZ / "src").rglob("*.py"):
-        assert "PROVISIONAL" not in ruta.read_text(encoding="utf-8"), ruta
-    assert "PROVISIONAL" not in rutas.BITACORA.read_text(encoding="utf-8")
+        texto = ruta.read_text(encoding="utf-8")
+        assert not aprobada.search(texto), ruta
+        for m in re.finditer("PROVISIONAL", texto):
+            assert nueva.search(texto[m.start() : m.start() + 250]), (ruta, texto[m.start() : m.start() + 120])
+    for fila in leer_bitacora():
+        texto = fila["justificacion"]
+        assert not aprobada.search(texto), fila["id"]
+        if "PROVISIONAL" in texto:
+            assert nueva.search(texto), fila["id"]

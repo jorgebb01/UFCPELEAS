@@ -245,6 +245,44 @@ _RES_PELEADOR = {
 }
 
 
+def valores_unicos_d25(t08: pd.DataFrame) -> tuple[dict[str, dict[str, object]], pd.DataFrame]:
+    """D-25: un único valor de fecha de nacimiento, altura y alcance por peleador_url: el de su pelea más reciente.
+
+    La pelea más reciente es la de mayor fecha; si hay varias ese día, la de menor source_row (F-01 está en orden
+    cronológico inverso). Devuelve {atributo: {url: valor}} y la tabla de valores descartados.
+    """
+    valores: dict[str, dict[str, object]] = {}
+    descartes = []
+    for attr in FISICOS_D23:
+        largo = pd.concat(
+            [
+                t08[["fecha", "source_row", f"f_{k}_url", f"f_{k}_name", f"f_{k}_fighter_{attr}"]].set_axis(
+                    ["fecha", "source_row", "url", "nombre", "valor"], axis=1
+                )
+                for k in (1, 2)
+            ],
+            ignore_index=True,
+        ).sort_values(["url", "fecha", "source_row"], ascending=[True, False, True], kind="mergesort")
+        elegido = largo.drop_duplicates("url", keep="first").set_index("url")
+        valores[attr] = elegido["valor"].to_dict()
+        for url, g in largo.dropna(subset=["valor"]).groupby("url", sort=True):
+            if g["valor"].nunique() > 1:
+                usado = elegido.loc[url, "valor"]
+                otros = g[g["valor"] != usado]
+                descartes.append(
+                    {
+                        "atributo": attr,
+                        "peleador_url": url,
+                        "nombre": elegido.loc[url, "nombre"],
+                        "valor_usado": usado,
+                        "source_row_usado": int(elegido.loc[url, "source_row"]),
+                        "valores_descartados": ";".join(str(v) for v in sorted(otros["valor"].astype(str).unique())),
+                        "source_rows_descartados": ";".join(str(r) for r in sorted(otros["source_row"])),
+                    }
+                )
+    return valores, pd.DataFrame(descartes)
+
+
 def t09_perspectivas(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
     """T-09: dos filas por pelea, una por peleador (perspectiva), con sus estadísticas y las del rival."""
     base = [
@@ -262,6 +300,7 @@ def t09_perspectivas(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
         "metodo_grupo",
         "duracion_seg",
     ]
+    unicos, descartes = valores_unicos_d25(t08)
     partes = []
     for yo, otro in ((1, 2), (2, 1)):
         p = t08[base].copy()
@@ -278,12 +317,14 @@ def t09_perspectivas(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
             p[e] = t08[f"f_{yo}_{e}"]
             p[f"rec_{e}"] = t08[f"f_{otro}_{e}"]
         # D-23: edad a la fecha de la pelea (no la actual), altura y alcance; vacío si falta el dato, sin imputar.
+        # D-25: valor único por peleador (el de su pelea más reciente en F-01).
         fecha = pd.to_datetime(t08["fecha"])
         for pref, lado in (("", yo), ("rival_", otro)):
-            nacimiento = pd.to_datetime(t08[f"f_{lado}_fighter_dob"], format="%Y-%m-%d")
+            url = t08[f"f_{lado}_url"]
+            nacimiento = pd.to_datetime(url.map(unicos["dob"]), format="%Y-%m-%d")
             p[f"{pref}edad"] = (fecha - nacimiento).dt.days / 365.25
-            p[f"{pref}altura_cm"] = t08[f"f_{lado}_fighter_height_cm"]
-            p[f"{pref}alcance_cm"] = t08[f"f_{lado}_fighter_reach_cm"]
+            p[f"{pref}altura_cm"] = url.map(unicos["height_cm"]).astype(float)
+            p[f"{pref}alcance_cm"] = url.map(unicos["reach_cm"]).astype(float)
         for a in ("edad", "altura_cm", "alcance_cm"):
             p[f"dif_{a}"] = p[a] - p[f"rival_{a}"]
         partes.append(p)
@@ -291,15 +332,13 @@ def t09_perspectivas(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
     if (df["edad"] <= 0).any():
         raise ValueError("T-09: edad no positiva a la fecha de la pelea")
     faltan = {c: int(df[c].isna().sum()) for c in ("edad", "altura_cm", "alcance_cm")}
-    for attr, nombre in (("dob", "fecha de nacimiento"), ("height_cm", "altura"), ("reach_cm", "alcance")):
-        largo = pd.concat(
-            [t08[[f"f_{k}_url", f"f_{k}_fighter_{attr}"]].set_axis(["url", "valor"], axis=1) for k in (1, 2)]
-        )
-        distintos = largo.groupby("url")["valor"].nunique()
-        if (distintos > 1).any():
-            ctx.avisar(
-                f"T-09: {int((distintos > 1).sum())} peleadores con más de un valor de {nombre} en F-01; se usa el de cada fila (propuesta D-25)"
-            )
+    detalle_d25 = "; ".join(
+        f"{r.nombre} ({r.peleador_url.rsplit('/', 1)[-1]}) {r.atributo}: usado {r.valor_usado} (source_row {r.source_row_usado}), "
+        f"descartado {r.valores_descartados} (source_row {r.source_rows_descartados})"
+        for r in descartes.itertuples()
+    )
+    if len(descartes):
+        ctx.avisar(f"T-09 D-25: {descartes['peleador_url'].nunique()} peleadores con valores físicos distintos unificados ({len(descartes)} atributos)")
     df = df.sort_values(["fecha", "source_row", "posicion"], ascending=[True, False, True], kind="mergesort")
     df = df.reset_index(drop=True)
     ctx.guardar(
@@ -312,11 +351,13 @@ def t09_perspectivas(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
             "resultado_peleador (victoria/derrota/empate/sin_resultado) y estadísticas propias y recibidas (rec_*) de esa pelea. "
             "Variables nuevas: edad = (fecha - f_*_fighter_dob) en días / 365,25, altura_cm, alcance_cm del peleador y del rival "
             f"(rival_*) y diferencias dif_* = peleador - rival; sin imputar (filas vacías: edad {faltan['edad']}, altura "
-            f"{faltan['altura_cm']}, alcance {faltan['alcance_cm']})"
+            f"{faltan['altura_cm']}, alcance {faltan['alcance_cm']}). D-25: valor único por peleador_url, el de su pelea más "
+            f"reciente; {len(descartes)} atributos de {descartes['peleador_url'].nunique() if len(descartes) else 0} peleadores "
+            f"unificados: {detalle_d25}"
         ),
         justificacion=(
             "D-02 (perspectiva por URL de ufcstats); D-23 (edad calculada a la fecha de cada pelea; altura y alcance como "
-            "atributos estáticos); D-01 (fecha = event_date)"
+            "atributos estáticos); D-25 (valor único por peleador: el de su pelea más reciente); D-01 (fecha = event_date)"
         ),
         filas_antes=len(t08),
     )

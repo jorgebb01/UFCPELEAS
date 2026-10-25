@@ -7,9 +7,10 @@ from dataclasses import dataclass
 import pandas as pd
 
 from ufcpeleas.models import rutas
+from ufcpeleas.models.cifras import t33_cifras, t34_linaje
 from ufcpeleas.models.diccionario import escribir_diccionario
 from ufcpeleas.models.fuentes import Verificacion, sha256, verificar_fuentes
-from ufcpeleas.models.transformaciones import cuotas, dataset, peleas
+from ufcpeleas.models.transformaciones import cuotas, dataset, modelado, peleas
 from ufcpeleas.models.transformaciones.base import Contexto
 
 
@@ -22,6 +23,9 @@ class ResultadoPipeline:
     final: pd.DataFrame
     cobertura: pd.DataFrame
     peleas_clave: pd.DataFrame
+    modelo: dict[str, pd.DataFrame]
+    modelo_elegido: str
+    cifras: pd.DataFrame
 
 
 def paso0_verificar() -> list[Verificacion]:
@@ -63,10 +67,13 @@ def ejecutar() -> ResultadoPipeline:
     final = dataset.t19_dataset_final(ctx, t11, t18)
     cobertura = dataset.t20_cobertura(ctx, final)
     clave = dataset.t21_peleas_clave(ctx, final)
+    estado, tablas = modelado.ejecutar_modelo(ctx, final, t08, t09)
+    cifras = t33_cifras(ctx, final, cobertura, tablas, estado.modelo_elegido)
+    t34_linaje(ctx, cifras)
     ctx.bitacora.escribir()
     escribir_diccionario(final)
     _escribir_manifiesto(ctx)
-    return ResultadoPipeline(verificaciones, ctx, final, cobertura, clave)
+    return ResultadoPipeline(verificaciones, ctx, final, cobertura, clave, tablas, estado.modelo_elegido, cifras)
 
 
 def _escribir_manifiesto(ctx: Contexto) -> None:
