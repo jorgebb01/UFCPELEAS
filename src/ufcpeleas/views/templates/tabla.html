@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}{{ archivo }}{% endblock %}
+{% block contenido %}
+<h1><code>{{ archivo }}</code></h1>
+<p>{{ total }} filas.</p>
+{{ m.paginacion('auditoria.tabla', pagina, paginas, {'archivo': archivo}) }}
+<div class="desplazable"><table>
+  <thead><tr>{% for col in columnas %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for f in filas %}<tr>{% for col in columnas %}
+    <td>{% if col == 'source_row' and f.get('source_id', 'F-01').startswith('F-') and f[col] %}<a href="{{ url_for('auditoria.fila', id_fuente=f.get('source_id', 'F-01'), source_row=f[col]|int) }}">{{ f[col] }}</a>{% else %}{{ f[col] }}{% endif %}</td>
+  {% endfor %}</tr>{% endfor %}</tbody>
+</table></div>
+{{ m.paginacion('auditoria.tabla', pagina, paginas, {'archivo': archivo}) }}
+{% endblock %}

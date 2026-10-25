@@ -273,3 +273,11 @@ Cada decisión de criterio del caso CD-726-017 queda registrada con su identific
 - **Estado:** APROBADA el 2026-10-25 por jorgebb01.
 - **Decisión:** la probabilidad de mercado de cada escenario se presenta como **estimación puntual sin intervalo**, porque cada escenario tiene una sola línea vigente. El informe lo declara explícitamente y da como referencia de incertidumbre el IC95 bootstrap del modelo combinado C (D-29). No se construye una banda de calibración del mercado.
 - **Justificación:** el modelo C empata con el mercado en test (D-27) y su intervalo recoge la incertidumbre del ajuste con un método ya aprobado; una banda de calibración añadiría un criterio nuevo difícil de justificar con una sola línea por escenario.
+
+## D-34 — Elección de la cifra al azar en el simulacro de auditoría
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** el botón "Cifra al azar" de la app (`/cifra-al-azar`) elige entre todas las cifras de `final/cifras.csv` con un generador no reproducible (`random.SystemRandom`), para que nadie pueda prever qué cifra saldrá. Con el parámetro opcional `?semilla=n` la elección es reproducible, para repetir un simulacro concreto si el profesor lo pide.
+- **Justificación:** el simulacro exige que la cifra la elija el profesor sin que el equipo la conozca de antemano. La semilla opcional permite reconstruir después qué cifra se auditó. No afecta a ninguna cifra del informe.

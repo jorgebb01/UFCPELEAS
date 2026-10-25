@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titulo %}Faltan salidas{% endblock %}
+{% block contenido %}
+<h1>Faltan salidas del pipeline</h1>
+<p class="aviso">No se encuentran estos archivos:</p>
+<ul>{% for f in faltan %}<li><code>{{ f }}</code></li>{% endfor %}</ul>
+<p>Ejecuta <code>uv run ufcpeleas pipeline</code> (y <code>uv run ufcpeleas informe</code> para el informe) y vuelve a cargar la página. La app no los genera porque es de solo lectura.</p>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio{% endblock %}
+{% block contenido %}
+<h1>Probabilidad de que Ilia Topuria gane su próxima pelea</h1>
+<p>Fecha supuesta de la pelea: <strong>{{ escenarios[0].fecha_supuesta if escenarios else '' }}</strong> (D-28). El modelo elegido aparece resaltado; cada valor enlaza con su ficha de auditoría en la lista de <a href="{{ url_for('auditoria.cifras') }}">cifras</a>.</p>
+<table>
+  <thead><tr><th>Escenario</th><th>Rival</th><th>Modelo</th><th>Probabilidad de Topuria</th><th>Intervalo</th><th>Origen</th><th>Limitación</th></tr></thead>
+  <tbody>
+  {% for e in escenarios %}
+    <tr class="{{ 'elegido' if e.elegido == 'True' else '' }}">
+      <td>{{ e.escenario }}</td><td>{{ e.rival_nombre }}</td><td>{{ e.modelo }}{% if e.elegido == 'True' %} (elegido){% endif %}</td>
+      <td class="num">{{ '%.1f'|format(e.p_topuria|float * 100) }} %</td>
+      <td class="num">{{ '%.1f'|format(e.ic_inf|float * 100) }} – {{ '%.1f'|format(e.ic_sup|float * 100) }} %</td>
+      <td><small>{{ e.ids_origen }}</small></td>
+      <td><small>{{ e.limitacion }}</small></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p>El mercado no tiene intervalo propio: hay una sola línea por escenario (D-33). Como referencia de incertidumbre se usa el del modelo combinado.</p>
+<p><a class="boton" href="{{ url_for('principal.informe') }}">Leer el informe ejecutivo</a> <a class="boton" href="{{ url_for('auditoria.azar') }}">Simulacro: cifra al azar</a></p>
+{% endblock %}

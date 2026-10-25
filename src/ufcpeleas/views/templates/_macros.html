@@ -1,0 +1,18 @@
+{% macro decisiones(lista) -%}
+  {% for d in lista %}<a href="{{ url_for('trazabilidad.decisiones') }}#{{ d }}">{{ d }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+{%- endmacro %}
+
+{% macro nodo(n) -%}
+  {% if n.startswith('T-') or n.startswith('I-') %}<a href="{{ url_for('trazabilidad.bitacora') }}#{{ n }}">{{ n }}</a>
+  {% else %}<a href="{{ url_for('trazabilidad.fuentes') }}#{{ n }}">{{ n }}</a>{% endif %}
+{%- endmacro %}
+
+{% macro paginacion(endpoint, pagina, paginas, kwargs) -%}
+  {% if paginas > 1 %}
+  <p class="paginas">
+    {% if pagina > 1 %}<a href="{{ url_for(endpoint, pagina=pagina - 1, **kwargs) }}">« anterior</a>{% endif %}
+    Página {{ pagina }} de {{ paginas }}
+    {% if pagina < paginas %}<a href="{{ url_for(endpoint, pagina=pagina + 1, **kwargs) }}">siguiente »</a>{% endif %}
+  </p>
+  {% endif %}
+{%- endmacro %}

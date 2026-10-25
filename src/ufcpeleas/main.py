@@ -73,6 +73,14 @@ def _linaje(nodo: str) -> int:
     return 0
 
 
+def _app(host: str, port: int) -> int:
+    """Arranca la app Flask del simulacro de auditoría (solo lectura)."""
+    from ufcpeleas.app import create_app
+
+    create_app().run(host=host, port=port, debug=False)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Analiza los argumentos y ejecuta la orden pedida."""
     parser = argparse.ArgumentParser(prog="ufcpeleas", description="Caso CD-726-017: pipeline trazable de datos UFC.")
@@ -82,7 +90,12 @@ def main(argv: list[str] | None = None) -> int:
     p_lin = sub.add_parser("linaje", help="Cifras de final/cifras.csv que dependen de una transformación (T-07) o fuente (F-05)")
     p_lin.add_argument("nodo", help="ID de transformación o fuente, p. ej. T-07")
     sub.add_parser("informe", help="Genera final/informe_ejecutivo.md desde docs/informe_plantilla.md y final/cifras.csv")
+    p_app = sub.add_parser("app", help="Arranca la app web de auditoría (solo lectura) en http://127.0.0.1:5000")
+    p_app.add_argument("--host", default="127.0.0.1")
+    p_app.add_argument("--port", type=int, default=5000)
     args = parser.parse_args(argv)
+    if args.orden == "app":
+        return _app(args.host, args.port)
     if args.orden == "pipeline":
         return _pipeline()
     if args.orden == "informe":

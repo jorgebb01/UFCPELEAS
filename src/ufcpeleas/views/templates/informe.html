@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block titulo %}Informe ejecutivo{% endblock %}
+{% block contenido %}
+<p class="nota">Generado desde <code>final/informe_ejecutivo.md</code>. Cada <span class="cifra">C-xxx</span> enlaza con la ficha de esa cifra.</p>
+<article class="informe">{{ html|safe }}</article>
+{% endblock %}

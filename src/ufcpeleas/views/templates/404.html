@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block titulo %}No encontrado{% endblock %}
+{% block contenido %}
+<h1>No encontrado</h1>
+<p>La página o la cifra pedida no existe. Consulta la <a href="{{ url_for('auditoria.cifras') }}">lista de cifras</a>.</p>
+{% endblock %}

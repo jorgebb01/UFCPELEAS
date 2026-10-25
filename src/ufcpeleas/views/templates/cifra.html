@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}{{ c.id_cifra }}{% endblock %}
+{% block contenido %}
+<h1>{{ c.id_cifra }}: <span class="valor">{{ c.valor }}</span></h1>
+<p class="descripcion">{{ c.descripcion }}</p>
+{% if c.limitacion %}<p class="aviso">Limitación: {{ c.limitacion }}</p>{% endif %}
+
+<h2>1. Dónde está la cifra</h2>
+<p>Archivo <a href="{{ url_for('auditoria.tabla', archivo=loc.archivo) }}"><code>{{ loc.archivo }}</code></a> · localizador <code>{{ c.localizador }}</code></p>
+{% if loc.error %}<p class="aviso">{{ loc.error }}</p>{% else %}
+<p>
+  {% if loc.coincide %}<span class="ok">El valor del archivo coincide con la cifra.</span>
+  {% elif loc.coincide is none %}<span class="aviso">No se puede comprobar el valor automáticamente.</span>
+  {% else %}<span class="error">El valor del archivo NO coincide con la cifra.</span>{% endif %}
+</p>
+<div class="desplazable"><table>
+  <thead><tr>{% for col in loc.columnas %}<th class="{{ 'marcada' if col == loc.columna else '' }}">{{ col }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for f in loc.filas %}<tr>{% for col in loc.columnas %}<td class="{{ 'marcada' if col == loc.columna else '' }}">{{ f[col] }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+<h2>2. Transformación que la produce</h2>
+{% if transformacion %}
+<table class="ficha">
+  <tr><th>ID</th><td><a href="{{ url_for('trazabilidad.bitacora') }}#{{ transformacion.id }}">{{ transformacion.id }}</a> · <a href="{{ url_for('auditoria.linaje', nodo=transformacion.id) }}">cifras que dependen de ella</a></td></tr>
+  <tr><th>Fecha / responsable</th><td>{{ transformacion.fecha }} · {{ transformacion.responsable }}</td></tr>
+  <tr><th>Entrada</th><td>{{ transformacion.entrada }}</td></tr>
+  <tr><th>Operación</th><td>{{ transformacion.operacion }}</td></tr>
+  <tr><th>Justificación</th><td>{{ transformacion.justificacion }}</td></tr>
+  <tr><th>Decisiones citadas</th><td>{{ m.decisiones(transformacion.decisiones) }}</td></tr>
+  <tr><th>Filas antes → después</th><td>{{ transformacion.filas_antes }} → {{ transformacion.filas_despues }}</td></tr>
+  <tr><th>Salida</th><td><code>{{ transformacion.salida }}</code></td></tr>
+</table>
+{% else %}<p class="aviso">La transformación {{ c.transformacion }} no está en la bitácora.</p>{% endif %}
+
+<h2>3. Cadena de linaje</h2>
+<p><strong>Directa:</strong> {% for n in linaje.transformacion_directa %}{{ m.nodo(n) }} {% endfor %}</p>
+<p><strong>Transformaciones previas:</strong> {% for n in linaje.transformacion_previa %}{{ m.nodo(n) }}{% if not loop.last %} · {% endif %}{% else %}ninguna{% endfor %}</p>
+<p><strong>Fuentes:</strong> {% for n in linaje.fuente %}{{ m.nodo(n) }} (<a href="{{ url_for('auditoria.linaje', nodo=n) }}">linaje inverso</a>){% if not loop.last %} · {% endif %}{% else %}ninguna{% endfor %}</p>
+
+<h2>4. Origen en raw/ y manual/</h2>
+<p>Texto de origen: <code>{{ origen.origen.texto }}</code></p>
+{% for t in origen.origen.tablas %}<p>Tabla citada: <a href="{{ url_for('auditoria.tabla', archivo=t) }}"><code>{{ t }}</code></a> (paginada; cada fila conserva su <code>source_row</code>).</p>{% endfor %}
+{% if origen.total %}
+<p>{{ origen.total }} filas crudas citadas{% if origen.paginas > 1 %}; se muestran {{ origen.crudas|length }}{% endif %}.</p>
+{{ m.paginacion('auditoria.ficha', origen.pagina, origen.paginas, {'id_cifra': c.id_cifra}) }}
+{% for f in origen.crudas %}
+  {% include "_fila_cruda.html" %}
+{% endfor %}
+{{ m.paginacion('auditoria.ficha', origen.pagina, origen.paginas, {'id_cifra': c.id_cifra}) }}
+{% elif not origen.origen.tablas %}<p class="aviso">El origen no cita filas concretas; se rastrea a través de las transformaciones del linaje.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}UFCPELEAS{% endblock %} · Caso CD-726-017</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header>
+    <a class="marca" href="{{ url_for('principal.inicio') }}">¿Volverá a ganar El Matador?</a>
+    <nav>
+      <a href="{{ url_for('principal.inicio') }}">Inicio</a>
+      <a href="{{ url_for('principal.informe') }}">Informe</a>
+      <a href="{{ url_for('auditoria.cifras') }}">Cifras</a>
+      <a href="{{ url_for('auditoria.linaje_indice') }}">Linaje</a>
+      <a href="{{ url_for('trazabilidad.fuentes') }}">Fuentes</a>
+      <a href="{{ url_for('trazabilidad.bitacora') }}">Bitácora</a>
+      <a href="{{ url_for('trazabilidad.decisiones') }}">Decisiones</a>
+      <a class="boton" href="{{ url_for('auditoria.azar') }}">Cifra al azar</a>
+    </nav>
+  </header>
+  <main>
+    {% block contenido %}{% endblock %}
+  </main>
+  <footer>Caso CD-726-017 · App de solo lectura: no ejecuta el pipeline ni escribe en disco. Para regenerar las salidas: <code>uv run ufcpeleas pipeline</code>.</footer>
+</body>
+</html>

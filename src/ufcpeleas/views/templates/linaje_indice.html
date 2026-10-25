@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block titulo %}Linaje inverso{% endblock %}
+{% block contenido %}
+<h1>Linaje inverso: ¿qué cifras cambian si hay un error?</h1>
+<form action="{{ url_for('auditoria.linaje_indice') }}" method="get">
+  <label>Transformación o fuente (p. ej. T-07, F-05): <input name="nodo" value="T-07" size="6"></label>
+  <button type="submit">Consultar</button>
+</form>
+<h2>Transformaciones</h2>
+<ul class="columnas">{% for f in bitacora %}<li><a href="{{ url_for('auditoria.linaje', nodo=f.id) }}">{{ f.id }}</a> <small>{{ f.salida }}</small></li>{% endfor %}</ul>
+<h2>Fuentes</h2>
+<p>{% for n in ['F-01','F-02','F-03','F-04','F-05','F-06','F-07','F-08'] %}<a href="{{ url_for('auditoria.linaje', nodo=n) }}">{{ n }}</a> {% endfor %}</p>
+{% endblock %}

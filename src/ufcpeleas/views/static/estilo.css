@@ -1,0 +1,35 @@
+/* Estilo propio, sin dependencias externas. */
+:root { --fondo: #fafaf7; --texto: #1d1d1b; --acento: #9b1c1c; --suave: #6b6b66; --borde: #d9d8d0; --ok: #1e6b35; --marca: #fff4c2; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fondo); color: var(--texto); }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; padding: .7rem 1.5rem; background: #1d1d1b; }
+header a { color: #f3f3ef; text-decoration: none; }
+.marca { font-weight: 700; margin-right: auto; }
+nav { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; }
+nav a:hover { text-decoration: underline; }
+main { max-width: 1250px; margin: 0 auto; padding: 1.2rem 1.5rem 3rem; }
+footer { color: var(--suave); font-size: .85rem; padding: 1rem 1.5rem; border-top: 1px solid var(--borde); }
+h1 { font-size: 1.5rem; } h2 { font-size: 1.15rem; margin-top: 2rem; border-bottom: 1px solid var(--borde); }
+a { color: var(--acento); }
+table { border-collapse: collapse; width: 100%; margin: .6rem 0; background: #fff; }
+th, td { border: 1px solid var(--borde); padding: .3rem .5rem; text-align: left; vertical-align: top; }
+th { background: #f0efe8; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.ficha th { width: 14rem; }
+tr.elegido td { background: #fdf0f0; font-weight: 600; }
+.marcada { background: var(--marca); }
+.desplazable { overflow-x: auto; }
+.valor { color: var(--acento); }
+.descripcion { font-size: 1.1rem; }
+.ok { color: var(--ok); font-weight: 600; }
+.error { color: #b00020; font-weight: 600; }
+.aviso { background: var(--marca); padding: .4rem .6rem; border-left: 4px solid #d4a400; }
+.nota { color: var(--suave); font-size: .9rem; }
+.boton, button { display: inline-block; background: var(--acento); color: #fff !important; padding: .35rem .8rem; border: 0; border-radius: 4px; text-decoration: none; cursor: pointer; font: inherit; }
+a.cifra { font-family: ui-monospace, monospace; font-size: .9em; }
+code { font-family: ui-monospace, monospace; font-size: .9em; }
+code.hash { word-break: break-all; font-size: .78em; }
+details.cruda { background: #fff; border: 1px solid var(--borde); padding: .4rem .7rem; margin: .5rem 0; }
+.paginas a { margin: 0 .5rem; }
+ul.columnas { columns: 3; }
+.informe table { width: auto; }

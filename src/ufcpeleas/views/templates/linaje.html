@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block titulo %}Linaje {{ nodo }}{% endblock %}
+{% block contenido %}
+<h1>Si {{ nodo }} tiene un error cambian {{ cifras|length }} de {{ total }} cifras</h1>
+{% if transformacion %}<p><strong>{{ transformacion.id }}</strong>: {{ transformacion.operacion }} → <code>{{ transformacion.salida }}</code></p>{% endif %}
+<p class="nota">Linaje a nivel de tabla, conservador: incluye toda cifra cuya cadena de transformaciones pasa por {{ nodo }}.</p>
+<table>
+  <thead><tr><th>ID</th><th>Valor</th><th>Descripción</th><th>Transformación directa</th></tr></thead>
+  <tbody>{% for c in cifras %}<tr><td><a href="{{ url_for('auditoria.ficha', id_cifra=c.id_cifra) }}">{{ c.id_cifra }}</a></td><td class="num">{{ c.valor }}</td><td>{{ c.descripcion }}</td><td>{{ c.transformacion }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

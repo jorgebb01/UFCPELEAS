@@ -1,0 +1,13 @@
+<details class="cruda" {% if loop is not defined or loop.index <= 3 %}open{% endif %}>
+  <summary><strong>{{ f.id_fuente }}</strong> · <code>{{ f.archivo }}</code> · registro {{ f.source_row }} · línea física {{ f.source_line }}
+    {% if f.campos.id_manual %} · {{ f.campos.id_manual }}{% endif %}
+    · <a href="{{ url_for('auditoria.fila', id_fuente=f.id_fuente, source_row=f.source_row) }}">enlace permanente</a></summary>
+  {% if f.extra %}
+  <p>{% if f.extra.url %}Fuente: <a href="{{ f.extra.url }}" rel="noopener noreferrer">{{ f.extra.url }}</a>{% endif %}
+  {% if f.extra.captura %} · captura <a href="{{ url_for('auditoria.captura', nombre=f.extra.captura) }}"><code>{{ f.extra.captura }}</code></a> ({{ f.extra.fecha_captura_utc }}, SHA-256 <code>{{ f.extra.sha256 }}</code>){% endif %}</p>
+  {% endif %}
+  <div class="desplazable"><table class="ficha">
+    {% for k, v in f.campos.items() %}{% if v != '' %}<tr><th>{{ k }}</th><td>{{ v }}</td></tr>{% endif %}{% endfor %}
+  </table></div>
+  <p class="nota">Se omiten los campos vacíos. Fila leída del archivo original, sin modificarlo.</p>
+</details>

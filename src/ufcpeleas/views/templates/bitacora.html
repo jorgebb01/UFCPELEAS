@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block titulo %}Bitácora{% endblock %}
+{% block contenido %}
+<h1>Bitácora ({{ filas|length }} entradas)</h1>
+<p class="nota">T-00..T-06 e I-xx son manuales (D-32); T-07 en adelante las escribe el pipeline, con la fecha de su última ejecución (D-24).</p>
+<table>
+  <thead><tr><th>ID</th><th>Fecha</th><th>Entrada</th><th>Operación</th><th>Justificación</th><th>Decisiones</th><th>Filas</th><th>Salida</th></tr></thead>
+  <tbody>{% for f in filas %}
+    <tr id="{{ f.id }}"><td><a href="{{ url_for('auditoria.linaje', nodo=f.id) }}">{{ f.id }}</a></td><td>{{ f.fecha }}<br><small>{{ f.responsable }}</small></td><td><small>{{ f.entrada }}</small></td><td><small>{{ f.operacion }}</small></td><td><small>{{ f.justificacion }}</small></td><td>{{ m.decisiones(f.decisiones) }}</td><td class="num">{{ f.filas_antes }} → {{ f.filas_despues }}</td><td><small><code>{{ f.salida }}</code></small></td></tr>
+  {% endfor %}</tbody>
+</table>
+{% endblock %}

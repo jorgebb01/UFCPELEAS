@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block titulo %}{{ f.id_fuente }} registro {{ f.source_row }}{% endblock %}
+{% block contenido %}
+<h1>{{ f.id_fuente }} · registro {{ f.source_row }}</h1>
+{% include "_fila_cruda.html" %}
+{% endblock %}

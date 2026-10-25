@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block titulo %}Decisiones{% endblock %}
+{% block contenido %}
+<p class="indice">{% for d in ids %}<a href="#{{ d }}">{{ d }}</a> {% endfor %}</p>
+<article class="informe">{{ html|safe }}</article>
+{% endblock %}

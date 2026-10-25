@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block titulo %}Fuentes{% endblock %}
+{% block contenido %}
+<h1>Registro de fuentes y verificación en vivo</h1>
+<p class="nota">SHA-256, bytes y número de registros recalculados ahora sobre los archivos de raw/ y manual/ (paso 0, sin escribir nada).</p>
+{% if error %}<p class="error">Verificación fallida: {{ error }}</p>{% endif %}
+<table>
+  <thead><tr><th>ID</th><th>Archivo</th><th>Estado</th><th>SHA-256 registrado</th><th>Filas (registro / disco)</th><th>Origen</th><th>Consulta</th></tr></thead>
+  <tbody>
+  {% for e in estados %}
+    <tr id="{{ e.registro.id_fuente }}">
+      <td>{{ e.registro.id_fuente }}</td><td><code>{{ e.registro.ruta }}</code></td>
+      <td>{% if e.correcta %}<span class="ok">correcto</span>{% else %}<span class="error">NO coincide (disco {{ e.sha256_disco[:12] }}…)</span>{% endif %}</td>
+      <td><code class="hash">{{ e.registro.sha256 }}</code></td>
+      <td class="num">{{ e.registro.filas }} / {{ e.filas_disco }}</td>
+      <td>{{ e.registro.origen }}<br><small>{% if e.registro.url.startswith('http') %}<a href="{{ e.registro.url }}" rel="noopener noreferrer">{{ e.registro.url }}</a>{% else %}{{ e.registro.url }}{% endif %}</small></td>
+      <td>{{ e.registro.fecha_consulta }} · {{ e.registro.responsable }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<h2>Capturas de F-03 ({{ capturas|length }})</h2>
+<table>
+  <thead><tr><th>Captura</th><th>Estado</th><th>SHA-256</th><th>Bytes</th></tr></thead>
+  <tbody>{% for c in capturas %}<tr><td><a href="{{ url_for('auditoria.captura', nombre=c.ruta.rsplit('/', 1)[-1]) }}"><code>{{ c.ruta }}</code></a></td><td>{% if c.correcta %}<span class="ok">correcto</span>{% else %}<span class="error">NO coincide</span>{% endif %}</td><td><code class="hash">{{ c.sha256 }}</code></td><td class="num">{{ c.bytes }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}
