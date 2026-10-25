@@ -50,7 +50,7 @@ def _pipeline() -> int:
 
 
 def _informe() -> int:
-    """Genera final/informe_ejecutivo.md con las cifras de final/cifras.csv."""
+    """Genera final/informe_ejecutivo.md con las cifras de final/cifras.csv y su PDF (D-35)."""
     from ufcpeleas.models.informe import ErrorInforme, generar
 
     try:
@@ -59,6 +59,23 @@ def _informe() -> int:
         print(f"ERROR en el informe: {e}", file=sys.stderr)
         return 1
     print(f"Informe: {rutas.relativa(salida)}")
+    return _pdf()
+
+
+def _pdf() -> int:
+    """Convierte final/informe_ejecutivo.md en final/informe_ejecutivo.pdf y comprueba que conserva IDs y cifras."""
+    from ufcpeleas.models.informe_pdf import ErrorInformePdf, generar_pdf, verificar_pdf
+
+    try:
+        salida = generar_pdf()
+    except (ErrorInformePdf, FileNotFoundError) as e:
+        print(f"ERROR en el PDF: {e}", file=sys.stderr)
+        return 1
+    c = verificar_pdf()
+    print(
+        f"PDF: {rutas.relativa(salida)} ({c.paginas} páginas: {c.paginas_cuerpo} de informe + anexo); "
+        f"{c.ids_md} IDs de cifra y {c.numeros_md} números del .md presentes, ninguno añadido"
+    )
     return 0
 
 
@@ -89,7 +106,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("verificar", help="Solo el paso 0: verifica SHA-256, bytes y registros de registro_fuentes.csv")
     p_lin = sub.add_parser("linaje", help="Cifras de final/cifras.csv que dependen de una transformación (T-07) o fuente (F-05)")
     p_lin.add_argument("nodo", help="ID de transformación o fuente, p. ej. T-07")
-    sub.add_parser("informe", help="Genera final/informe_ejecutivo.md desde docs/informe_plantilla.md y final/cifras.csv")
+    sub.add_parser("informe", help="Genera final/informe_ejecutivo.md desde docs/informe_plantilla.md y final/cifras.csv, y su PDF")
+    sub.add_parser("pdf", help="Solo convierte final/informe_ejecutivo.md en final/informe_ejecutivo.pdf (D-35) y verifica sus cifras")
     p_app = sub.add_parser("app", help="Arranca la app web de auditoría (solo lectura) en http://127.0.0.1:5000")
     p_app.add_argument("--host", default="127.0.0.1")
     p_app.add_argument("--port", type=int, default=5000)
@@ -100,6 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         return _pipeline()
     if args.orden == "informe":
         return _informe()
+    if args.orden == "pdf":
+        return _pdf()
     if args.orden == "linaje":
         return _linaje(args.nodo)
     return _verificar()

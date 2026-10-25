@@ -47,7 +47,7 @@ Dominó el segundo asalto (1 [C-125] derribo con golpe, 122 [C-143] s de control
 3. **Cuotas vacías o antiguas.** El dataset principal no tiene cuotas. Se añadieron dos datasets de Kaggle y cuotas manuales. La cobertura de cierre es del 96,7 % [C-008] desde 2021 y del 100,0 % [C-010] en las peleas de Topuria. 3 [C-011] cuotas de Topuria vienen de una carga histórica sin casa identificada: quitarlas cambia sus probabilidades como máximo 0,0005 [C-077], menos de una décima de punto (D-18). En cambio, sí pesan en su historial: Topuria ganó 2,4 [C-083] peleas más de las que esperaba el mercado, pero sin esas 3 cuotas el exceso baja a 1,0 [C-085]. La línea Topuria–Pimblett de diciembre de 2025 es anterior a la derrota; con ella la probabilidad sería 84,4 % [C-160] (4,5 [C-161] puntos más) y se usa solo como sensibilidad (D-31).
 4. **Solo peleas UFC.** Topuria llegó invicto de fuera de la UFC y ese historial no cuenta en las variables.
 
-**Cómo se mantiene la trazabilidad:** los archivos crudos no se modifican. Lo añadido a mano va en `manual/` con URL, fecha de consulta y captura con hash. Cada transformación queda en `bitacora.csv` (T-xx automáticas, T-00 a T-06 e I-xx manuales). Los 33 criterios están escritos y aprobados en `decisiones.md`.
+**Cómo se mantiene la trazabilidad:** los archivos crudos no se modifican. Lo añadido a mano va en `manual/` con URL, fecha de consulta y captura con hash. Cada transformación queda en `bitacora.csv` (T-xx automáticas, T-00 a T-06 e I-xx manuales). Los 35 criterios están escritos y aprobados en `decisiones.md`.
 
 ## 5. Si el auditor encuentra un error en T-07, ¿qué cifras cambian?
 
