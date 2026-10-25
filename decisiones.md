@@ -113,3 +113,91 @@ Cada decisión de criterio del caso CD-726-017 queda registrada con su identific
 - **Decisión:** cuando ufcstats.com no se puede leer en directo, se aceptan como fuente de nivel 1 las copias de Wayback Machine de sus páginas, descargadas sin modificar (sufijo `id_`). En `url` se registra la URL de la copia y en `notas`, la URL canónica de ufcstats.
 - **Justificación:** el 2026-10-24 ufcstats.com devolvía un desafío JavaScript anti-bot por HTTP y rechazaba la conexión por HTTPS (evidencia en `manual/capturas/ufcstats_live_challenge_fight_c078544a32e18ba3.html`). No se intentó saltar ese control. Las copias de Wayback tienen fecha fija y no cambian, lo que facilita que el auditor las reproduzca.
 - **Recomendación (2026-10-24):** aprobar, con dos condiciones: (1) preferir siempre la copia de Wayback más reciente anterior a la fecha de consulta y guardar su captura en `manual/capturas/` con hash; (2) si una cifra del informe depende de una página de ufcstats que solo se ha leído en Wayback, contrastarla con F-01 (que procede del mismo ufcstats) o con una segunda fuente (Sherdog, Wikipedia con revisión fija). Wayback es la única forma reproducible de citar ufcstats mientras esté bloqueado, y la URL de la copia no cambia, a diferencia de la página en directo.
+
+## D-14 — Unión de F-04/F-05 con F-01 por fecha y nombres
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** F-04 se une con F-01 por fecha con tolerancia de ±2 días y nombres normalizados; se acepta una coincidencia con nombres solo compatibles cuando el candidato es único. Las peleas sin unión inequívoca quedan sin cuota de F-05 y se reportan.
+- **Justificación:** F-04 no trae URL de ufcstats (D-02). En 311 peleas F-04 tiene la fecha 1–2 días después que F-01, por los husos horarios de eventos en Asia y Oceanía. Resultado de T-12: 4.472 de 4.477 unidas, ninguna ambigua; las 5 sin unir son alias (Cris Cyborg = Cristiane Justino, Jose Henrique = Jose Souza, Jo Sungbin = Sung Bin Jo) y solo una tiene cuotas (fight_id 4230). Si se necesitara, una tabla de alias en `manual/` con su fuente resolvería esos casos. Cuando F-04 y F-01 discrepan en el resultado (3 casos, anulados en F-01), prevalece F-01.
+
+## D-15 — Historial: peleas del mismo día y cálculo de la racha
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** En las variables históricas, las peleas del mismo día (torneos de 1993–1999) no se ven entre sí. Para la racha, dentro de un mismo día las victorias cuentan antes, y un empate o un sin resultado ponen la racha a 0.
+- **Justificación:** Las variables históricas solo pueden usar peleas estrictamente anteriores (D-03); en los torneos no hay un orden fiable dentro del día. La regla de la racha es una convención explícita para que el cálculo sea reproducible.
+
+## D-16 — Duración de asalto de 5 minutos
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01. Nota: el supuesto es incorrecto para parte de las peleas de los primeros años de la UFC (sin asaltos o con asaltos de otra duración); no afecta al modelo si se entrena con peleas desde 2021 (D-18).
+- **Decisión:** `duracion_seg` y las tasas por minuto se calculan con asaltos de 5 minutos para todas las épocas: (asalto final − 1) × 300 + reloj del asalto final.
+- **Justificación:** F-01 no informa de la duración de los asaltos de cada época. Es el formato vigente en la UFC.
+
+## D-17 — Exclusión de Matchbook en F-07
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Se excluyen de F-07 las filas con `source` = `Matchbook` (959 filas).
+- **Justificación:** Matchbook es un intercambio entre apostadores; se aplica el mismo criterio que D-11.
+
+## D-18 — Cuotas de F-07: instantáneas previas y carga histórica `zewnetrzne`
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01, con condiciones.
+- **Decisión:** (a) De F-07 solo se usan instantáneas tomadas el día UTC anterior a la pelea o antes (`adding_date` < `event_date`). (b) Se acepta como cuota de cierre histórica la carga `source` = `zewnetrzne` (capturada el 2025-07-27, posterior a las peleas, de una sola casa no identificada). Condiciones: (1) el dataset analítico lleva una columna que identifica las cuotas que proceden de esa carga; (2) el modelo se entrena con peleas desde 2021, donde F-05 cubre el 96,7 % de las cuotas; (3) el informe incluye un análisis de sensibilidad de la probabilidad de Topuria con y sin las 3 peleas suyas que dependen de esta carga (Zalal, Jackson y Volkanovski).
+- **Justificación:** Es la única fuente de cierre para la mayoría de las peleas anteriores a 2021 (4.413 de las 4.417 peleas con cuota de F-07). No hay fuga temporal: son cuotas de cierre, publicadas antes de la pelea aunque se capturaran después. El riesgo es que la casa no está identificada, de ahí la marca y el análisis de sensibilidad. D-10 ya la acepta para UFC 298.
+
+## D-19 — Rango de cierre de BestFightOdds
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Cuando F-02 solo tiene el "Closing range" de BFO, se promedian las probabilidades brutas de los dos extremos de cada peleador y después se normaliza para quitar el margen (D-08).
+- **Justificación:** Concreta el punto (c) de D-07 y garantiza que las dos probabilidades de la pelea sumen 1.
+
+## D-20 — Casa repetida en la misma pelea de F-05
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Si una casa aparece dos veces en la misma pelea de F-05, primero se promedian sus filas y después se hace la media entre casas.
+- **Justificación:** Evita que una casa pese el doble. Caso detectado: fight_id 3085, BetWay, Chookagian con dos grafías del nombre.
+
+## D-21 — Emparejamiento de las cuotas previas de Covers (UFC 282)
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Las dos filas `previa_no_cierre` de Covers para Topuria vs Mitchell se emparejan por la URL del artículo, aunque cada lado indique una casa distinta ("DraftKings" / "no indicada en la fuente"). El resultado se marca como aproximación (D-07 d).
+- **Justificación:** Es la única cuota disponible para esa pelea (F-05 y F-07 no la tienen).
+
+## D-22 — Descarte de filas de F-07 con URL y nombre contradictorios
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** Se descartan las filas de F-07 en las que el nombre del peleador contradice su URL de ufcstats dentro de la misma pelea (17.870 filas usables, eventos del 2025-08-02 al 2025-09-06). No se reorientan por nombre.
+- **Justificación:** Si se orientaran por URL la probabilidad saldría invertida (diferencias de hasta 0,66 con F-05). Reorientarlas por nombre sería suponer cuál de los dos campos es el correcto. Tras el descarte, la diferencia media con F-05 en las 1.671 peleas comunes es 0,011.
+
+## D-23 — Edad, altura y alcance como excepción a D-03
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01, con la condición de que la edad se calcule a la fecha de cada pelea.
+- **Decisión:** Se admiten como variables la fecha de nacimiento (para calcular la edad a la fecha de cada pelea), la altura y el alcance de `f_*_fighter_*`, aunque D-03 excluye el resto de esas columnas.
+- **Justificación:** Son atributos que no dependen de peleas posteriores (la altura y el alcance de un adulto no cambian de forma relevante), así que no introducen fuga temporal. La edad calculada a la fecha de la pelea sí cambia con el tiempo y por eso no se usa la edad actual.
+
+## D-24 — Fecha de las filas automáticas de la bitácora
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** En las filas T-07 en adelante de `bitacora.csv`, que escribe el pipeline, la columna `fecha` es la fecha de la última ejecución del pipeline, no la fecha en que se diseñó la transformación. Las filas T-00 a T-06 son manuales y conservan su fecha.
+- **Justificación:** El pipeline regenera esas filas en cada ejecución (idempotencia); la fecha de ejecución indica cuándo se produjeron las salidas que hay en disco, que es lo que el auditor comprueba con `final/manifiesto_salidas.csv`.

@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Salidas regenerables del pipeline (uv run ufcpeleas pipeline); sus SHA-256 quedan en final/manifiesto_salidas.csv
+interim/*.csv
+final/dataset_analitico.csv

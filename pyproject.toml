@@ -2,7 +2,9 @@
 name = "ufcpeleas"
 version = "0.1.0"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "pandas>=3.1.0",
+]
 
 [project.scripts]
 ufcpeleas = "ufcpeleas.main:main"
@@ -10,3 +12,8 @@ ufcpeleas = "ufcpeleas.main:main"
 [build-system]
 requires = ["uv_build>=0.13.3,<0.14"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
