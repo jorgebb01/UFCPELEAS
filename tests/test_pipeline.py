@@ -23,7 +23,9 @@ SHA_F01 = "7bdfb1b9feea9bfba1c5eb210028764562673205dbae218118b91a7c73313f67"
 TOPURIA = PELEADORES_CLAVE["Ilia Topuria"]
 PELEA_GAETHJE = "7208e40818401e88"
 PELEA_UFC298 = "bec3154a11df3299"
-IDS_MANUALES = [f"T-{i:02d}" for i in range(7)]
+IDS_MANUALES = [*(f"T-{i:02d}" for i in range(7)), "I-01"]  # D-32: T-00..T-06 y serie I-xx
+#: SHA-256 del texto literal de la fila I-01 (incluido el salto de línea), tal como se añadió el 2026-10-25.
+SHA_FILA_I01 = "0131077c311eece0433fd0730369ba2b6240dfa5e3566060e6690bb7c4d91832"
 
 
 @pytest.fixture(scope="session")
@@ -93,7 +95,7 @@ def test_bitacora_recuento_de_filas(resultado):
 
 def test_bitacora_filas_despues_coinciden_con_salidas(resultado):
     for fila in leer_bitacora():
-        if fila["id"] in IDS_MANUALES:
+        if fila["id"] in IDS_MANUALES or fila["id"].startswith("I-"):
             continue
         assert fila["responsable"] and fila["fecha"] and fila["justificacion"]
         # Cada transformación cita su decisión, una regla de auditoría o la pregunta del caso que atiende.
@@ -109,20 +111,45 @@ def test_bitacora_conserva_filas_manuales_literalmente(resultado):
     except (OSError, subprocess.CalledProcessError):
         pytest.skip("git no disponible")
     actual = rutas.BITACORA.read_bytes().decode("utf-8")
+    # T-00..T-06 idénticas a las del commit fc478cf, al principio del archivo.
     assert actual.startswith(conservar_filas_manuales(original))
-    assert conservar_filas_manuales(actual) == original
+    # D-32: después solo hay filas I-xx manuales y, a continuación, las T-07+ del pipeline.
+    resto = conservar_filas_manuales(actual)[len(original):]
+    assert resto.startswith("I-01,")
+
+
+def test_fila_i01_conservada_literalmente(resultado):
+    import hashlib
+
+    lineas = rutas.BITACORA.read_bytes().split(b"\n")
+    fila = next(l for l in lineas if l.startswith(b"I-01,")) + b"\n"
+    assert hashlib.sha256(fila).hexdigest() == SHA_FILA_I01
+    ids = [f["id"] for f in leer_bitacora()]
+    assert ids.index("I-01") == ids.index("T-06") + 1 and ids.index("T-07") == ids.index("I-01") + 1
+
+
+def test_bitacora_rechaza_ids_desconocidos(tmp_path: Path, monkeypatch):
+    copia = tmp_path / "bitacora.csv"
+    texto = rutas.BITACORA.read_bytes() + b"X-01,2026-10-25,yo,e,o,j,0,0,s\n"
+    copia.write_bytes(texto)
+    monkeypatch.setattr(rutas, "_ARCHIVOS_RAIZ_PERMITIDOS", (copia,))
+    with pytest.raises(ValueError, match="X-01"):
+        Bitacora(ruta=copia).escribir()
 
 
 def test_bitacora_idempotente(tmp_path: Path, monkeypatch):
     copia = tmp_path / "bitacora.csv"
     shutil.copy(rutas.BITACORA, copia)
     monkeypatch.setattr(rutas, "_ARCHIVOS_RAIZ_PERMITIDOS", (copia,))
+    # Una entrada manual I-02 añadida al final también se conserva, y queda antes de las T-07+ (D-32).
+    with open(copia, "ab") as fh:
+        fh.write(b"I-02,2026-10-25,jorgebb01,prueba,ingesta manual,D-32,0,0,manual/x.csv\n")
     for _ in range(2):
         b = Bitacora(ruta=copia)
         b.registrar(EntradaBitacora("T-07", "e", "o", "D-01", 1, 1, "interim/x.csv"))
         b.escribir()
     filas = leer_bitacora(copia)
-    assert [f["id"] for f in filas] == [*IDS_MANUALES, "T-07"]
+    assert [f["id"] for f in filas] == [*IDS_MANUALES, "I-02", "T-07"]
 
 
 def test_bitacora_rechaza_ids_manuales():

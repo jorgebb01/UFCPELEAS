@@ -342,7 +342,9 @@ def t16_f07_cierre_por_casa(ctx: Contexto, t15: pd.DataFrame, t08: pd.DataFrame)
 
 # --------------------------------------------------------------------------- T-17
 
-_TIPOS_F02 = ("cierre_casa", "cierre_rango", "previa_no_cierre", "apertura")
+#: Vocabulario cerrado de tipos de F-02 (sin sufijos _izquierda/_derecha). vigente_citada_prensa: D-31, línea futura sin
+#: fight_url (no entra en T-17; la usa T-23).
+_TIPOS_F02 = ("cierre_casa", "cierre_rango", "previa_no_cierre", "apertura", "vigente_citada_prensa")
 
 
 def t17_f02_manual(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
@@ -357,6 +359,9 @@ def t17_f02_manual(ctx: Contexto, t08: pd.DataFrame) -> pd.DataFrame:
     df = df[~df["casa_apuestas"].isin(D11_EXCLUIR_F02)]
     df["tipo"] = df["tipo_cuota"].str.replace(r"_(izquierda|derecha)$", "", regex=True)
     df["p_bruta"] = 1 / df["dec"]
+    desconocidos = set(f02["tipo_cuota"].str.replace(r"_(izquierda|derecha)$", "", regex=True)) - set(_TIPOS_F02)
+    if desconocidos:
+        raise ValueError(f"F-02: tipo_cuota fuera del vocabulario cerrado: {sorted(desconocidos)}")
     df = df.merge(t08[["fight_url", "id_pelea", "f_1_url", "f_2_url"]], on="fight_url", how="inner", validate="many_to_one")
     df["lado"] = np.select([df["fighter_url"] == df["f_1_url"], df["fighter_url"] == df["f_2_url"]], ["f_1", "f_2"], "")
     if (df["lado"] == "").any():

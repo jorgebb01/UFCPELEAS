@@ -249,3 +249,19 @@ Cada decisión de criterio del caso CD-726-017 queda registrada con su identific
 - **Estado:** APROBADA el 2026-10-25 por jorgebb01.
 - **Decisión:** Las líneas futuras de F-07 no tienen URL de ufcstats, así que se identifican por los dos nombres normalizados, como excepción a D-02. Solo se usan las capturadas entre el 2026-06-14 y el corte de D-28. Para Topuria–Pimblett solo se usa la línea de F-02 (M-0115 a M-0120), marcada como anterior a la derrota ante Gaethje.
 - **Justificación:** Una pelea futura todavía no tiene página en ufcstats. El riesgo de confusión es bajo porque se exigen los dos nombres a la vez (Ilia Topuria con su rival, no Aleksandre Topuria). Limitación: la probabilidad de mercado del escenario Pimblett procede de una línea anterior a la derrota y probablemente está inflada.
+
+## D-31 — Cuota vigente del escenario Topuria–Pimblett
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** la cuota de mercado del escenario Topuria–Pimblett es **Topuria -500 / Pimblett +375** (M-0172, M-0173), publicada por Heavy el 2026-10-17 citando el agregador FightOdds.io; `tipo_cuota` = `vigente_citada_prensa`. La línea de diciembre de 2025 (M-0115 a M-0120, -770/+510) se conserva solo como análisis de sensibilidad. Con D-08, la probabilidad de Topuria sin margen es ≈ 0,798.
+- **Justificación:** es la única línea Topuria–Pimblett localizada posterior a la derrota ante Gaethje (2026-06-14); la anterior no refleja esa información. Es una excepción a la jerarquía de fuentes (prensa que cita a un agregador), por lo que se declaran como limitaciones: no se conoce la casa de apuestas ni la fecha en que FightOdds.io publicó la línea, y la página del agregador no se pudo leer (se cargaba con JavaScript y el acceso a su API quedó bloqueado). Búsquedas sin resultado en BFO, F-07, Covers, Action Network y DKNetwork, detalladas en el informe del investigador web.
+
+## D-32 — Numeración de las entradas manuales de la bitácora
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** las entradas manuales de `bitacora.csv` posteriores a la creación del pipeline (ingestas y archivo de datos hechas a mano) se numeran con una serie propia: **I-01, I-02…**. T-00 a T-06 conservan su numeración. La serie T-07 en adelante queda reservada a las transformaciones que escribe el pipeline (D-24), que debe conservar intactas las filas T-00 a T-06 y todas las I-xx.
+- **Justificación:** el pipeline regenera sus filas T-07+ en cada ejecución; una entrada manual con un ID de esa serie se sobrescribiría, y renumerar rompería las referencias de `final/cifras.csv` y `final/linaje.csv`.

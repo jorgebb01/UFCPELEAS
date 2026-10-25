@@ -2,6 +2,10 @@
 
 D-24: la columna `fecha` de las filas automáticas (T-07+) es la fecha de la última ejecución del pipeline;
 coincide con la de las salidas en disco que recoge final/manifiesto_salidas.csv.
+
+D-32: las filas manuales (T-00..T-06 y la serie I-01, I-02...) se conservan byte a byte. Orden estable del archivo:
+primero todas las filas manuales en el orden en que aparecen en el archivo (T-00..T-06 y después las I-xx), y a
+continuación las filas T-07+ que escribe el pipeline, en orden de ejecución.
 """
 
 from __future__ import annotations
@@ -31,6 +35,13 @@ COLUMNAS: tuple[str, ...] = (
 PRIMERA_T_PIPELINE: int = 7
 
 _PATRON_ID = re.compile(r"^T-(\d+)$")
+#: D-32: IDs de entradas manuales: T-00..T-06 e I-01, I-02...
+_PATRON_MANUAL = re.compile(r"^(T-0[0-6]|I-\d{2,})$")
+
+
+def es_fila_manual(id_t: str) -> bool:
+    """True si el ID es de una entrada manual que el pipeline nunca modifica (D-32)."""
+    return bool(_PATRON_MANUAL.match(id_t.strip()))
 
 
 def es_fila_pipeline(id_t: str) -> bool:
@@ -106,6 +117,8 @@ def conservar_filas_manuales(texto: str) -> str:
     for registro in lector:
         fin = lector.line_num
         if registro and not es_fila_pipeline(registro[0]):
+            if not es_fila_manual(registro[0]):
+                raise ValueError(f"ID de bitácora no reconocido (D-32 admite T-00..T-06, I-xx y T-07+): {registro[0]}")
             trozo = "".join(lineas[fin_anterior:fin])
             partes.append(trozo if trozo.endswith("\n") else trozo + "\n")
         fin_anterior = fin

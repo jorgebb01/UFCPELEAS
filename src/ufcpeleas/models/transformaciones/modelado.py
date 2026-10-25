@@ -53,8 +53,15 @@ ESCENARIOS: dict[str, str] = {
 #: id_manual de las líneas futuras de F-02 por escenario.
 F02_FUTURAS: dict[str, tuple[str, ...]] = {
     "revancha_gaethje": tuple(f"M-{i:04d}" for i in range(109, 115)),
-    "pimblett": tuple(f"M-{i:04d}" for i in range(115, 121)),
+    "pimblett": (*(f"M-{i:04d}" for i in range(115, 121)), "M-0172", "M-0173"),
 }
+#: D-31: línea vigente del escenario Pimblett (prensa que cita FightOdds.io) y línea de diciembre de 2025 (solo sensibilidad).
+TIPO_VIGENTE_PRENSA = "vigente_citada_prensa"
+F02_PIMBLETT_DIC_2025: tuple[str, ...] = tuple(f"M-{i:04d}" for i in range(115, 121))
+LIMITACION_D31 = (
+    "D-31: línea Topuria -500 / Pimblett +375 publicada por Heavy (2026-10-17) citando el agregador FightOdds.io; "
+    "casa de apuestas y fecha de la línea desconocidas; página del agregador no verificable"
+)
 #: Peleas de Topuria con cuota de la carga histórica zewnetrzne (D-18): Zalal, Jackson, Volkanovski.
 PELEAS_CARGA_HISTORICA_TOPURIA: tuple[str, ...] = ("22fe6779c3fa649d", "b1be8b41b1a4fd85", "bec3154a11df3299")
 
@@ -145,8 +152,9 @@ def t23_cuotas_futuras(ctx: Contexto) -> pd.DataFrame:
                     "margen": margen,
                     "fecha_linea": "",
                     "ids_origen": "F-02:" + ";".join(sorted(gt["id_manual"])),
-                    "anterior_a_derrota": esc == "pimblett",
-                    "usada": tipo == "cierre_rango" and esc == "pimblett",
+                    "anterior_a_derrota": bool(gt["id_manual"].isin(F02_PIMBLETT_DIC_2025).all()),
+                    "usada": esc == "pimblett" and tipo == TIPO_VIGENTE_PRENSA,
+                    "limitacion": LIMITACION_D31 if tipo == TIPO_VIGENTE_PRENSA else "",
                 }
             )
     # F-07: líneas sin fight_url de la revancha, capturadas después de la primera pelea y antes del corte.
@@ -186,6 +194,7 @@ def t23_cuotas_futuras(ctx: Contexto) -> pd.DataFrame:
                 "ids_origen": "F-07:" + ";".join(str(x) for x in sorted(gc["source_row"])),
                 "anterior_a_derrota": False,
                 "usada": True,
+                "limitacion": "",
             }
         )
     out = pd.DataFrame(filas)
@@ -197,15 +206,17 @@ def t23_cuotas_futuras(ctx: Contexto) -> pd.DataFrame:
         rutas.INTERIM / "t23_cuotas_futuras.csv",
         entrada="manual/cuotas.csv (F-02); raw/jerzyszocik_v273/UFC_betting_odds.csv (F-07)",
         operacion=(
-            "F-02: M-0109..M-0114 (revancha) y M-0115..M-0120 (Topuria-Pimblett, línea de diciembre de 2025, anterior a la derrota) "
-            "por tipo (apertura, cierre_rango) con D-08/D-19. F-07: filas sin fight_url con los nombres normalizados Ilia Topuria y "
+            "F-02: M-0109..M-0114 (revancha); Topuria-Pimblett: M-0172/M-0173 (vigente_citada_prensa, Heavy 2026-10-17 citando "
+            "FightOdds.io, usada) y M-0115..M-0120 (diciembre de 2025, anterior a la derrota, solo sensibilidad); por tipo "
+            "(apertura, cierre_rango, vigente_citada_prensa) con D-08/D-19. F-07: filas sin fight_url con los nombres normalizados Ilia Topuria y "
             f"Justin Gaethje, event_date > {FECHA_GAETHJE}, día UTC de captura entre {FECHA_GAETHJE} y {FECHA_CORTE} (exclusivos), "
             "sin Betfair/Matchbook; última instantánea por casa y probabilidad sin margen. usada = línea de referencia del escenario "
-            "(F-07 antes que F-02, D-07; en Pimblett solo F-02)"
+            "(F-07 antes que F-02, D-07; en Pimblett, M-0172/M-0173 por D-31)"
         ),
         justificacion=(
             "D-07 (orden F-07 -> F-02); D-08; D-11/D-17; D-19 (rango BFO). identificación por nombres de las líneas "
-            "futuras sin URL (D-30) y fecha de corte (D-28)"
+            "futuras sin URL (D-30) y fecha de corte (D-28); D-31 (línea vigente de Pimblett citada en prensa; la de diciembre de "
+            "2025 pasa a sensibilidad)"
         ),
         filas_antes=len(f02) + len(f07),
     )
@@ -264,6 +275,7 @@ def t24_escenarios_variables(ctx: Contexto, t08: pd.DataFrame, t09: pd.DataFrame
         fila["mercado_fuente"] = ";".join(sorted(ref["fuente"].unique()))
         fila["mercado_ids_origen"] = ";".join(ref["ids_origen"])
         fila["mercado_anterior_a_derrota"] = bool(ref["anterior_a_derrota"].any())
+        fila["mercado_limitacion"] = "; ".join(x for x in ref["limitacion"].fillna("") if x)
         filas.append(fila)
     df = pd.DataFrame(filas)
     for c in ("hist_es_debut", "rival_hist_es_debut"):
@@ -481,7 +493,9 @@ def t29_escenarios(ctx: Contexto, t22: pd.DataFrame, t23: pd.DataFrame, t24: pd.
     filas = []
     for i, r in t24.iterrows():
         lineas = t23[(t23["escenario"] == r["escenario"]) & t23["usada"]]
-        rango = t23[(t23["escenario"] == r["escenario"]) & (t23["tipo"] != "apertura")]
+        # Intervalo de mercado: líneas posteriores a la derrota (la de diciembre de 2025 de Pimblett va a T-30, D-31).
+        rango = t23[(t23["escenario"] == r["escenario"]) & (t23["tipo"] != "apertura") & ~t23["anterior_a_derrota"]]
+        limitacion = r["mercado_limitacion"] if isinstance(r["mercado_limitacion"], str) else ""
         filas.append(
             {
                 "escenario": r["escenario"],
@@ -491,9 +505,10 @@ def t29_escenarios(ctx: Contexto, t22: pd.DataFrame, t23: pd.DataFrame, t24: pd.
                 "p_topuria": r["p_cierre_peleador"],
                 "ic_inf": float(rango["p_topuria"].min()),
                 "ic_sup": float(rango["p_topuria"].max()),
-                "metodo_intervalo": "mínimo y máximo de las líneas de cierre/última instantánea disponibles (F-07, F-02)",
+                "metodo_intervalo": "mínimo y máximo de las líneas posteriores a la derrota disponibles (F-07, F-02)",
                 "ids_origen": r["mercado_ids_origen"],
                 "notas": "línea de diciembre de 2025, anterior a la derrota ante Gaethje" if r["mercado_anterior_a_derrota"] else "",
+                "limitacion": limitacion,
             }
         )
         for nombre, m in modelos.items():
@@ -512,6 +527,7 @@ def t29_escenarios(ctx: Contexto, t22: pd.DataFrame, t23: pd.DataFrame, t24: pd.
                     "ids_origen": "interim/t22_modelado.csv; interim/t24_escenarios_variables.csv"
                     + (f"; {r['mercado_ids_origen']}" if nombre == "C_combinado" else ""),
                     "notas": "usa la línea anterior a la derrota" if nombre == "C_combinado" and r["mercado_anterior_a_derrota"] else "",
+                    "limitacion": limitacion if nombre == "C_combinado" else "",
                 }
             )
     df = pd.DataFrame(filas)
@@ -525,10 +541,11 @@ def t29_escenarios(ctx: Contexto, t22: pd.DataFrame, t23: pd.DataFrame, t24: pd.
             "final/modelo_coeficientes.csv (T-28); final/modelo_metricas.csv (T-26)"
         ),
         operacion=(
-            "Probabilidad de victoria de Topuria por escenario: A = mercado (intervalo = mín-máx de las líneas), B y C = modelos "
+            "Probabilidad de victoria de Topuria por escenario: A = mercado (intervalo = mín-máx de las líneas posteriores a la "
+            "derrota; en Pimblett, M-0172/M-0173 con su limitación en la columna limitacion), B y C = modelos "
             f"finales de T-28 (intervalo = bootstrap por peleas, {B_ESCENARIOS} réplicas); elegido = modelo de T-26"
         ),
-        justificacion="Escenarios pedidos por el caso; D-07/D-08 (mercado); fecha supuesta (D-28) e intervalos (D-29)",
+        justificacion="Escenarios pedidos por el caso; D-07/D-08 (mercado); D-31 (línea vigente de Pimblett); fecha supuesta (D-28) e intervalos (D-29)",
         filas_antes=len(t24),
     )
     return df
@@ -537,8 +554,10 @@ def t29_escenarios(ctx: Contexto, t22: pd.DataFrame, t23: pd.DataFrame, t24: pd.
 # --------------------------------------------------------------------------- T-30
 
 
-def t30_sensibilidad_d18(ctx: Contexto, t22: pd.DataFrame, t24: pd.DataFrame, final: pd.DataFrame, estado: EstadoModelo) -> pd.DataFrame:
-    """T-30: sensibilidad de la probabilidad de Topuria con y sin las cuotas de la carga histórica (D-18, condición 3)."""
+def t30_sensibilidad_d18(
+    ctx: Contexto, t22: pd.DataFrame, t23: pd.DataFrame, t24: pd.DataFrame, final: pd.DataFrame, estado: EstadoModelo
+) -> pd.DataFrame:
+    """T-30: sensibilidad de Topuria con y sin la carga histórica (D-18, condición 3) y con la línea antigua de Pimblett (D-31)."""
     en_entrenamiento = sorted(set(PELEAS_CARGA_HISTORICA_TOPURIA) & set(t22["id_pelea"]))
     variantes = {
         "base": t22,
@@ -567,20 +586,54 @@ def t30_sensibilidad_d18(ctx: Contexto, t22: pd.DataFrame, t24: pd.DataFrame, fi
             "dif_vs_base": float(g["objetivo_gana"].sum() - g["p_cierre_peleador"].sum()),
         }
         df = pd.concat([df, pd.DataFrame([filas_h])], ignore_index=True)
+    # D-31: escenario Pimblett con la línea de diciembre de 2025 (M-0115..M-0120, anterior a la derrota) en lugar de la vigente.
+    antigua = t23[(t23["escenario"] == "pimblett") & (t23["tipo"] == "cierre_rango") & t23["anterior_a_derrota"]]
+    p_antigua = float(antigua["p_topuria"].iloc[0])
+    fila_p = t24[t24["escenario"] == "pimblett"].copy()
+    fila_p["p_cierre_peleador"] = p_antigua
+    fila_p["logit_mercado"] = logit(p_antigua)
+    modelos_base = _ajustar_modelos(t22, estado.C)
+    base_p = df[(df["variante"] == "base") & (df["escenario"] == "pimblett")].set_index("modelo")["p_topuria"]
+    for nombre, p in (("A_mercado", p_antigua), ("C_combinado", float(modelos_base["C_combinado"].predecir(fila_p)[0]))):
+        df = pd.concat(
+            [
+                df,
+                pd.DataFrame(
+                    [
+                        {
+                            "variante": "pimblett_linea_dic_2025",
+                            "escenario": "pimblett",
+                            "modelo": nombre,
+                            "peleas_entrenamiento": t22["id_pelea"].nunique() if nombre != "A_mercado" else 0,
+                            "p_topuria": p,
+                            "dif_vs_base": p - float(base_p[nombre]),
+                        }
+                    ]
+                ),
+            ],
+            ignore_index=True,
+        )
+    df["ids_origen_mercado"] = np.where(df["variante"] == "pimblett_linea_dic_2025", antigua["ids_origen"].iloc[0], "")
     ctx.avisar(f"T-30: peleas de Topuria con carga histórica dentro del entrenamiento: {en_entrenamiento or 'ninguna'}")
     ctx.guardar(
         "T-30",
         df,
         rutas.FINAL / "sensibilidad_d18.csv",
-        entrada="interim/t22_modelado.csv (T-22); interim/t24_escenarios_variables.csv (T-24); final/dataset_analitico.csv (T-19)",
+        entrada=(
+            "interim/t22_modelado.csv (T-22); interim/t23_cuotas_futuras.csv (T-23); interim/t24_escenarios_variables.csv (T-24); "
+            "final/dataset_analitico.csv (T-19)"
+        ),
         operacion=(
             "Reajuste de B y C (C de T-25) en tres variantes: base, sin las 3 peleas de Topuria con cuota zewnetrzne (de ellas solo "
             f"{', '.join(en_entrenamiento) or 'ninguna'} está en el periodo desde 2021) y sin todas las peleas con cuota_carga_historica; "
-            "dif_vs_base. Filas carrera_topuria: p media de mercado de Topuria y victorias - victorias esperadas (dif_vs_base) con 10 y con 7 peleas"
+            "dif_vs_base. Filas carrera_topuria: p media de mercado de Topuria y victorias - victorias esperadas (dif_vs_base) con 10 y con 7 peleas. "
+            "Filas pimblett_linea_dic_2025: A y C del escenario Pimblett con la línea M-0115..M-0120 (-770/+510, cierre_rango) en "
+            "lugar de M-0172/M-0173; dif_vs_base frente a la línea vigente"
         ),
         justificacion=(
             "D-18 (3: sensibilidad de Topuria con y sin las peleas de la carga histórica). Las variables hist_* no usan cuotas, "
-            "así que Zalal y Jackson (2020) solo entrarían por el entrenamiento, que empieza en 2021"
+            "así que Zalal y Jackson (2020) solo entrarían por el entrenamiento, que empieza en 2021. D-31 (la línea de diciembre "
+            "de 2025 de Pimblett se conserva solo como sensibilidad)"
         ),
         filas_antes=len(t22),
     )
@@ -714,7 +767,7 @@ def ejecutar_modelo(ctx: Contexto, final: pd.DataFrame, t08: pd.DataFrame, t09: 
     t27 = t27_calibracion(ctx, t25)
     t28 = t28_coeficientes(ctx, t22, estado)
     t29 = t29_escenarios(ctx, t22, t23, t24, estado)
-    t30 = t30_sensibilidad_d18(ctx, t22, t24, final, estado)
+    t30 = t30_sensibilidad_d18(ctx, t22, t23, t24, final, estado)
     t31 = t31_pregunta2_prepelea(ctx, t22, final, estado)
     t32 = t32_pregunta2_por_asalto(ctx, t09)
     tablas = {"t22": t22, "t23": t23, "t24": t24, "t25": t25, "t26": t26, "t27": t27, "t28": t28, "t29": t29, "t30": t30, "t31": t31, "t32": t32}

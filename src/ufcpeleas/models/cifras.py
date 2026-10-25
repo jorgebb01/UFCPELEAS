@@ -11,7 +11,7 @@ import pandas as pd
 from ufcpeleas.models import rutas
 from ufcpeleas.models.bitacora import EntradaBitacora, leer_bitacora
 from ufcpeleas.models.transformaciones.base import Contexto
-from ufcpeleas.models.transformaciones.modelado import ESCENARIOS, FECHA_ESCENARIO, PELEA_GAETHJE, TOPURIA
+from ufcpeleas.models.transformaciones.modelado import ESCENARIOS, FECHA_ESCENARIO, LIMITACION_D31, PELEA_GAETHJE, TOPURIA
 
 CIFRAS = rutas.FINAL / "cifras.csv"
 LINAJE = rutas.FINAL / "linaje.csv"
@@ -26,7 +26,9 @@ class RegistroCifras:
 
     filas: list[dict[str, object]] = field(default_factory=list)
 
-    def anadir(self, valor: object, descripcion: str, archivo: str, localizador: str, origen: str, transformacion: str) -> str:
+    def anadir(
+        self, valor: object, descripcion: str, archivo: str, localizador: str, origen: str, transformacion: str, limitacion: str = ""
+    ) -> str:
         """Registra una cifra y devuelve su ID."""
         if isinstance(valor, (float, np.floating)):
             valor = round(float(valor), 6)
@@ -40,6 +42,7 @@ class RegistroCifras:
                 "localizador": localizador,
                 "origen": origen,
                 "transformacion": transformacion,
+                "limitacion": limitacion,
             }
         )
         return id_c
@@ -94,7 +97,8 @@ def t33_cifras(ctx: Contexto, final: pd.DataFrame, cobertura: pd.DataFrame, tabl
         rival = ESCENARIOS[e.escenario]
         origen = f"{_rows_peleador(final, TOPURIA)}; {_rows_peleador(final, rival)}; {e.ids_origen}"
         for col, desc in (("p_topuria", "Probabilidad de victoria de Topuria"), ("ic_inf", "Límite inferior del intervalo"), ("ic_sup", "Límite superior del intervalo")):
-            r.anadir(getattr(e, col), f"{desc}, escenario {e.escenario} ({FECHA_ESCENARIO}), modelo {e.modelo}", esc, f"escenario = {e.escenario}, modelo = {e.modelo}, columna {col}", origen, "T-29")
+            lim = e.limitacion if isinstance(e.limitacion, str) else ""
+            r.anadir(getattr(e, col), f"{desc}, escenario {e.escenario} ({FECHA_ESCENARIO}), modelo {e.modelo}", esc, f"escenario = {e.escenario}, modelo = {e.modelo}, columna {col}", origen, "T-29", lim)
     for e in t24.itertuples():
         rival = ESCENARIOS[e.escenario]
         r.anadir(e.edad, f"Edad de Topuria a {FECHA_ESCENARIO}", "interim/t24_escenarios_variables.csv", f"escenario = {e.escenario}, columna edad", "F-01 f_*_fighter_dob (D-25: fila más reciente de Topuria)", "T-24")
@@ -104,7 +108,8 @@ def t33_cifras(ctx: Contexto, final: pd.DataFrame, cobertura: pd.DataFrame, tabl
 
     sen = "final/sensibilidad_d18.csv"
     for s in tablas["t30"].itertuples():
-        if s.variante == "base" or s.modelo == "A_mercado" and s.escenario != "carrera_topuria":
+        # La sensibilidad D-31 (pimblett_linea_dic_2025) se registra al final para conservar la numeración previa.
+        if s.variante in ("base", "pimblett_linea_dic_2025") or s.modelo == "A_mercado" and s.escenario != "carrera_topuria":
             continue
         org = "interim/t22_modelado.csv; peleas de Topuria con carga histórica: 22fe6779c3fa649d, b1be8b41b1a4fd85, bec3154a11df3299"
         if s.escenario == "carrera_topuria":
@@ -126,6 +131,16 @@ def t33_cifras(ctx: Contexto, final: pd.DataFrame, cobertura: pd.DataFrame, tabl
             if pd.notna(v):
                 r.anadir(v, f"Topuria por asalto: {fila.metrica}, {col}", asal, f"metrica = {fila.metrica}, columna {col}", f"F-01 source_row {rows_t}, columnas f_*_rN_*", "T-32")
 
+    # Cifras añadidas con D-31 (al final, para no renumerar las anteriores).
+    t23 = tablas["t23"]
+    vig = t23[(t23["escenario"] == "pimblett") & t23["usada"]].iloc[0]
+    r.anadir(vig["p_topuria"], "Probabilidad sin margen de Topuria en la línea vigente Topuria -500 / Pimblett +375 (D-08, D-31)", "interim/t23_cuotas_futuras.csv", "escenario = pimblett, tipo = vigente_citada_prensa, columna p_topuria", vig["ids_origen"], "T-23", LIMITACION_D31)
+    r.anadir(vig["margen"], "Margen de la línea vigente Topuria -500 / Pimblett +375", "interim/t23_cuotas_futuras.csv", "escenario = pimblett, tipo = vigente_citada_prensa, columna margen", vig["ids_origen"], "T-23", LIMITACION_D31)
+    for s in tablas["t30"][tablas["t30"]["variante"] == "pimblett_linea_dic_2025"].itertuples():
+        org = f"{s.ids_origen_mercado} (diciembre de 2025, anterior a la derrota)"
+        r.anadir(s.p_topuria, f"Sensibilidad D-31: probabilidad de Topuria vs Pimblett con la línea de diciembre de 2025, modelo {s.modelo}", sen, f"variante = pimblett_linea_dic_2025, modelo = {s.modelo}, columna p_topuria", org, "T-30", "línea anterior a la derrota ante Gaethje")
+        r.anadir(s.dif_vs_base, f"Sensibilidad D-31: diferencia con la línea vigente, modelo {s.modelo}", sen, f"variante = pimblett_linea_dic_2025, modelo = {s.modelo}, columna dif_vs_base", org, "T-30", "línea anterior a la derrota ante Gaethje")
+
     df = pd.DataFrame(r.filas)
     ctx.guardar(
         "T-33",
@@ -133,12 +148,13 @@ def t33_cifras(ctx: Contexto, final: pd.DataFrame, cobertura: pd.DataFrame, tabl
         CIFRAS,
         entrada=(
             "interim/t07_peleas_f01.csv (T-07); interim/t10_historial.csv (T-10); final/dataset_analitico.csv (T-19); final/cobertura_cuotas.csv (T-20); interim/t24_escenarios_variables.csv (T-24); "
-            "final/modelo_metricas.csv (T-26); final/modelo_calibracion.csv (T-27); final/escenarios.csv (T-29); "
+            "interim/t23_cuotas_futuras.csv (T-23); final/modelo_metricas.csv (T-26); final/modelo_calibracion.csv (T-27); final/escenarios.csv (T-29); "
             "final/sensibilidad_d18.csv (T-30); final/pregunta2_prepelea.csv (T-31); final/pregunta2_por_asalto.csv (T-32)"
         ),
         operacion=(
             f"Registro de {len(df)} cifras citables C-001..C-{len(df):03d}: valor, descripción, archivo, localizador (fila y columna), "
-            "origen (source_row de F-01, id_manual de F-02, filas de F-05/F-07 o tabla intermedia) y transformación que la produce"
+            "origen (source_row de F-01, id_manual de F-02, filas de F-05/F-07 o tabla intermedia), transformación que la produce "
+            "y limitación conocida (D-31 en el escenario Pimblett)"
         ),
         justificacion="Regla de auditoría: cada cifra del informe lleva un ID que permite recorrer el camino de vuelta hasta la fuente",
         filas_antes=sum(len(t) for t in tablas.values()),

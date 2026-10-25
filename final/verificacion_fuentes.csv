@@ -1,7 +1,7 @@
 id_fuente,ruta,sha256,bytes,filas,correcta
 F-01,raw/UFC_full_data_silver_v2.csv,7bdfb1b9feea9bfba1c5eb210028764562673205dbae218118b91a7c73313f67,11314591,8950,True
-F-02,manual/cuotas.csv,ce6dc7684145e827caba3820a04ecb5192b4d6508eab7eb1dfb4c97e4f97598f,80627,156,True
-F-03,manual/capturas/indice_capturas.csv,a7a8a94a121266209a09da716ce2bb5b6c81aab440ccd5253d175b70d9902d33,6907,26,True
+F-02,manual/cuotas.csv,7306ea8c1e0fa87e9effb35810518d58120dd5d9f3eb896505886b3495bf5cb5,82709,158,True
+F-03,manual/capturas/indice_capturas.csv,aa6b33f98b67a7d51aa210ca69fa4141a1b0f992a95a3fb6df635146b01bec7c,7589,28,True
 F-03/captura,manual/capturas/bfo_fighter_ilia-topuria-8322.html,c3a410fb72315c9038be625858135428826b1eb990cc075ffc51cf14b304f611,58305,0,True
 F-03/captura,manual/capturas/bfo_fighter_alexsandre-topuria-15779.html,6eb9a18c46e3da9a3075c740f6f32fd890095aea1a1ece500f46af57b9377ccc,38865,0,True
 F-03/captura,manual/capturas/bfo_fighter_justin-gaethje-3964.html,dc4f29c24a8d263531a377da14bc3fdba551058e52396d93ce4782e5be786367,83088,0,True
@@ -28,6 +28,8 @@ F-03/captura,manual/capturas/wikipedia_UFC_27_oldid1345983486.html,7146d25b77eae
 F-03/captura,manual/capturas/sherdog_event_UFC-22-There-Can-Be-Only-One-Champion-32.html,eea21e25b4e8680310ecc53a26033db9ded77c2afdf129a48293c850a65e2aa2,91040,0,True
 F-03/captura,manual/capturas/sherdog_event_UFC-27-Ultimate-Bad-Boyz-37.html,be64748ee6f4b47a6a81e5e59b90e6512c7bb3684d3cc8ff4ae81c8ea74a68ff,87364,0,True
 F-03/captura,manual/capturas/ufcstats_live_challenge_fight_c078544a32e18ba3.html,a1ef0bae95eaba54a142b539ca09b46f25104f6e5840445613f37ea90597e0f6,2998,0,True
+F-03/captura,manual/capturas/heavy_paddy-pimblett-ilia-topuria-ufc-hofer.html,00d752a1570981105b560c18be37dfa6942c6cd94969324b7a7bfd03ac1296e0,141843,0,True
+F-03/captura,manual/capturas/yahoo_paddy-pimblett-vs-ilia-topuria-044050225.html,663f5baf6831058163506f798a0601bb9e1a62ae60e374a0edbd35d85df5a94e,720322,0,True
 F-04,raw/archangel0x01_v3/fights.csv,91c58665ef779ef88a26dd7798c7d676bbc6183d887c613e95f834094e7ece21,650352,4477,True
 F-05,raw/archangel0x01_v3/odds.csv,94055e78367c53c5c6017e41cad2c79c9647542742de11cd412b98bf05674e73,33828489,449964,True
 F-06,raw/archangel0x01_v3/data_dictionary.csv,35fec7feba6e0af3f3bd3b762d4b552226a43a6c91e479cb62e130c6798546f4,1853,23,True

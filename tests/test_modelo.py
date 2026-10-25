@@ -88,7 +88,7 @@ def test_escenarios_a_fecha_supuesta(resultado):
     assert v.loc["pimblett", "rival_hist_fecha_ultima_pelea"] == "2026-07-11"  # Pimblett vs Saint Denis
     dob = pd.Timestamp("1997-01-21")
     assert v.loc["revancha_gaethje", "edad"] == pytest.approx((pd.Timestamp(FECHA_ESCENARIO) - dob).days / 365.25)
-    assert bool(v.loc["pimblett", "mercado_anterior_a_derrota"]) is True
+    assert bool(v.loc["pimblett", "mercado_anterior_a_derrota"]) is False  # D-31: línea vigente posterior a la derrota
 
 
 # --------------------------------------------------------------------------- cifras y linaje
@@ -112,8 +112,9 @@ def test_linaje_t07(resultado):
     afectadas = cifras_afectadas("T-07")
     cifras = pd.read_csv(CIFRAS)
     assert "C-001" in set(afectadas["id_cifra"])
-    # T-07 es la raíz de todo lo que viene de F-01: todas las cifras dependen de ella.
-    assert len(afectadas) == len(cifras)
+    # T-07 es la raíz de todo lo que viene de F-01: dependen de ella todas las cifras salvo las que solo leen cuotas
+    # futuras (T-23: F-02 y F-07, sin peleas de F-01).
+    assert set(afectadas["id_cifra"]) == set(cifras.loc[cifras["transformacion"] != "T-23", "id_cifra"])
     linaje = pd.read_csv(LINAJE)
     assert set(linaje["tipo"]) == {"transformacion_directa", "transformacion_previa", "fuente"}
 
@@ -137,3 +138,46 @@ def test_reproducibilidad_de_cifras(resultado):
     t34_linaje(ctx, cifras)
     pd.testing.assert_frame_equal(antes, pd.read_csv(CIFRAS))
     pd.testing.assert_frame_equal(linaje_antes, pd.read_csv(LINAJE))
+
+
+# --------------------------------------------------------------------------- D-31
+
+
+def test_d31_pimblett_usa_linea_vigente(resultado):
+    esc = pd.read_csv(rutas.FINAL / "escenarios.csv").set_index(["escenario", "modelo"])
+    a = esc.loc[("pimblett", "A_mercado")]
+    assert a["ids_origen"] == "F-02:M-0172;M-0173"
+    bruta_t, bruta_p = 1 / 1.2, 1 / 4.75  # -500 / +375 (D-08)
+    assert a["p_topuria"] == pytest.approx(bruta_t / (bruta_t + bruta_p), abs=1e-9)
+    assert a["p_topuria"] == pytest.approx(0.798, abs=1e-3)
+    assert "M-0172;M-0173" in esc.loc[("pimblett", "C_combinado"), "ids_origen"]
+    for m in ("A_mercado", "C_combinado"):
+        assert "FightOdds.io" in esc.loc[("pimblett", m), "limitacion"]
+    assert "M-0115" not in " ".join(esc["ids_origen"].astype(str))
+    # La revancha con Gaethje no cambia.
+    assert esc.loc[("revancha_gaethje", "A_mercado"), "ids_origen"] == "F-07:216437"
+    cifras = pd.read_csv(CIFRAS).set_index("id_cifra")
+    assert float(cifras.loc["C-058", "valor"]) == pytest.approx(a["p_topuria"], abs=1e-6)
+    assert "FightOdds.io" in cifras.loc["C-058", "limitacion"]
+
+
+def test_d31_sensibilidad_linea_antigua(resultado):
+    sen = pd.read_csv(rutas.FINAL / "sensibilidad_d18.csv")
+    s = sen[sen["variante"] == "pimblett_linea_dic_2025"].set_index("modelo")
+    assert set(s.index) == {"A_mercado", "C_combinado"}
+    assert (s["ids_origen_mercado"] == "F-02:M-0116;M-0117;M-0119;M-0120").all()
+    bruta_t, bruta_p = 1 / americana(-770), 1 / americana(510)
+    assert s.loc["A_mercado", "p_topuria"] == pytest.approx(bruta_t / (bruta_t + bruta_p), abs=1e-9)
+    cifras = pd.read_csv(CIFRAS)
+    nuevas = cifras[cifras["descripcion"].str.startswith("Sensibilidad D-31")]
+    assert len(nuevas) == 4 and nuevas["origen"].str.contains("M-0116").all()
+    assert set(nuevas["id_cifra"]) <= set(cifras_afectadas("F-02")["id_cifra"])
+    pimblett = cifras[cifras["descripcion"].str.contains("escenario pimblett")]
+    assert set(pimblett["id_cifra"]) <= set(cifras_afectadas("F-02")["id_cifra"])
+
+
+def americana(a: int) -> float:
+    """Conversión D-08 para el test."""
+    from ufcpeleas.models.normalizacion import americana_a_decimal
+
+    return americana_a_decimal(a)
