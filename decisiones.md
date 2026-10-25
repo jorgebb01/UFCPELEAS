@@ -265,3 +265,11 @@ Cada decisión de criterio del caso CD-726-017 queda registrada con su identific
 - **Estado:** APROBADA el 2026-10-25 por jorgebb01.
 - **Decisión:** las entradas manuales de `bitacora.csv` posteriores a la creación del pipeline (ingestas y archivo de datos hechas a mano) se numeran con una serie propia: **I-01, I-02…**. T-00 a T-06 conservan su numeración. La serie T-07 en adelante queda reservada a las transformaciones que escribe el pipeline (D-24), que debe conservar intactas las filas T-00 a T-06 y todas las I-xx.
 - **Justificación:** el pipeline regenera sus filas T-07+ en cada ejecución; una entrada manual con un ID de esa serie se sobrescribiría, y renumerar rompería las referencias de `final/cifras.csv` y `final/linaje.csv`.
+
+## D-33 — Incertidumbre de la probabilidad de mercado
+
+- **Fecha:** 2026-10-25
+- **Responsable:** jorgebb01
+- **Estado:** APROBADA el 2026-10-25 por jorgebb01.
+- **Decisión:** la probabilidad de mercado de cada escenario se presenta como **estimación puntual sin intervalo**, porque cada escenario tiene una sola línea vigente. El informe lo declara explícitamente y da como referencia de incertidumbre el IC95 bootstrap del modelo combinado C (D-29). No se construye una banda de calibración del mercado.
+- **Justificación:** el modelo C empata con el mercado en test (D-27) y su intervalo recoge la incertidumbre del ajuste con un método ya aprobado; una banda de calibración añadiría un criterio nuevo difícil de justificar con una sola línea por escenario.

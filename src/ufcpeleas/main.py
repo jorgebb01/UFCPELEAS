@@ -46,6 +46,19 @@ def _pipeline() -> int:
     print(r.modelo["t29"][["escenario", "modelo", "p_topuria", "ic_inf", "ic_sup", "elegido"]].to_string(index=False))
     print(f"Cifras: {len(r.cifras)} en final/cifras.csv; linaje en final/linaje.csv")
     print(f"Bitácora: {rutas.relativa(rutas.BITACORA)}; diccionario: {rutas.relativa(rutas.DICCIONARIO)}")
+    return _informe()
+
+
+def _informe() -> int:
+    """Genera final/informe_ejecutivo.md con las cifras de final/cifras.csv."""
+    from ufcpeleas.models.informe import ErrorInforme, generar
+
+    try:
+        salida = generar()
+    except ErrorInforme as e:
+        print(f"ERROR en el informe: {e}", file=sys.stderr)
+        return 1
+    print(f"Informe: {rutas.relativa(salida)}")
     return 0
 
 
@@ -68,9 +81,12 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("verificar", help="Solo el paso 0: verifica SHA-256, bytes y registros de registro_fuentes.csv")
     p_lin = sub.add_parser("linaje", help="Cifras de final/cifras.csv que dependen de una transformación (T-07) o fuente (F-05)")
     p_lin.add_argument("nodo", help="ID de transformación o fuente, p. ej. T-07")
+    sub.add_parser("informe", help="Genera final/informe_ejecutivo.md desde docs/informe_plantilla.md y final/cifras.csv")
     args = parser.parse_args(argv)
     if args.orden == "pipeline":
         return _pipeline()
+    if args.orden == "informe":
+        return _informe()
     if args.orden == "linaje":
         return _linaje(args.nodo)
     return _verificar()
